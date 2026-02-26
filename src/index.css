@@ -149,6 +149,115 @@ code, pre, .font-mono {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+/* ─── Post-it / Sticky Note TaskCard ─── */
+
+.postit-card {
+  position: relative;
+  border: none;
+  border-radius: 2px;
+  padding: 0.875rem;
+  padding-top: 1.5rem;
+  will-change: transform;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(0,0,0,0.04) 100%);
+  background-blend-mode: overlay;
+  box-shadow: 2px 3px 8px rgba(0,0,0,0.35), 1px 1px 2px rgba(0,0,0,0.2);
+}
+.postit-card:hover {
+  transform: scale(1.02) rotate(0deg) !important;
+  z-index: 10;
+  box-shadow: 3px 5px 14px rgba(0,0,0,0.4), 1px 2px 4px rgba(0,0,0,0.25);
+}
+
+/* Collapsed: tighter padding, smaller tape & fold */
+.postit-card--collapsed {
+  padding-top: 1.125rem;
+  padding-bottom: 0.625rem;
+}
+.postit-card--collapsed .postit-tape {
+  width: 32px;
+  height: 10px;
+  top: -3px;
+}
+.postit-card--collapsed .postit-fold {
+  width: 12px;
+  height: 12px;
+}
+
+/* Tape strip */
+.postit-tape {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 48px;
+  height: 14px;
+  border-radius: 1px;
+  opacity: 0.7;
+  z-index: 2;
+  background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 20%, rgba(255,255,255,0.2) 80%, transparent 100%);
+  background-blend-mode: overlay;
+}
+
+/* Folded corner (bottom-right) */
+.postit-fold {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  z-index: 1;
+}
+.postit-fold::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(225deg, var(--postit-fold-bg, var(--th-panel-bg)) 50%, var(--postit-fold-color, #888) 50%);
+}
+.postit-fold::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: rgba(0,0,0,0.08);
+  filter: blur(3px);
+  transform: rotate(45deg);
+}
+
+/* Post-it text colors — dark theme */
+.postit-title { color: #f5f5f0; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.postit-text { color: #e0ddd5; }
+.postit-text-muted { color: #b0aca0; }
+
+/* Post-it text colors — light theme */
+[data-theme="light"] .postit-title { color: #1a1a1a !important; text-shadow: none; }
+[data-theme="light"] .postit-text { color: #333 !important; }
+[data-theme="light"] .postit-text-muted { color: #555 !important; }
+
+/* Light theme overrides for post-it card */
+[data-theme="light"] .postit-card {
+  box-shadow: 2px 3px 10px rgba(0,0,0,0.1), 1px 1px 3px rgba(0,0,0,0.06);
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.02) 100%);
+}
+[data-theme="light"] .postit-card:hover {
+  box-shadow: 3px 5px 16px rgba(0,0,0,0.14), 1px 2px 5px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .postit-tape { opacity: 0.55; }
+
+/* Post-it inner controls (semi-transparent on any color) */
+.postit-input {
+  background: rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.12);
+  backdrop-filter: blur(2px);
+}
+[data-theme="light"] .postit-input {
+  background: rgba(255,255,255,0.35);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
 [data-theme="dark"] .decision-inbox-option,
 [data-theme="dark"] .decision-inline-option,
 [data-theme]:not([data-theme="light"]) .decision-inbox-option,

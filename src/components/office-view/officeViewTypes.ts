@@ -55,6 +55,8 @@ export interface OfficeViewProps {
   onConveneTeamLeaderMeeting?: () => void;
   /** 팀장 0명 빈 상태에서 "에이전트 관리" 클릭 시 호출 */
   onOpenAgentManager?: () => void;
+  /** 드래그 앤 드롭으로 에이전트 부서 이동 시 호출 (null = 휴게실) */
+  onMoveAgent?: (agentId: string, targetDeptId: string | null) => void;
 }
 
 export interface Delivery {

@@ -11,6 +11,7 @@ import { CLI_OUTPUT_DEDUP_WINDOW_MS } from "../../db/runtime.ts";
 
 export const CLI_PATH_FALLBACK_DIRS = process.platform === "win32"
   ? [
+      path.join(os.homedir(), ".local", "bin"),
       path.join(process.env.ProgramFiles || "C:\\Program Files", "nodejs"),
       path.join(process.env.LOCALAPPDATA || "", "Programs", "nodejs"),
       path.join(process.env.APPDATA || "", "npm"),

@@ -3,7 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const SERVER_DIRNAME = path.dirname(fileURLToPath(import.meta.url));
+/** CJS 번들( dist-server/index.cjs )에서는 __dirname 사용, ESM( tsx )에서는 import.meta.url */
+declare const __dirname: string | undefined;
+export const SERVER_DIRNAME =
+  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 // ---------------------------------------------------------------------------
 // .env loader (no dotenv dependency)
@@ -78,7 +81,12 @@ export const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
 // ---------------------------------------------------------------------------
 // Production static file serving
 // ---------------------------------------------------------------------------
-export const DIST_DIR = path.resolve(SERVER_DIRNAME, "..", "..", "dist");
+const isBundledServer = path.basename(SERVER_DIRNAME) === "dist-server";
+export const DIST_DIR = process.env.HYPERCLAW_DIST
+  ? path.resolve(process.env.HYPERCLAW_DIST)
+  : isBundledServer
+    ? path.resolve(SERVER_DIRNAME, "..", "dist")
+    : path.resolve(SERVER_DIRNAME, "..", "..", "dist");
 export const IS_PRODUCTION = !process.env.VITE_DEV && fs.existsSync(path.join(DIST_DIR, "index.html"));
 
 // ---------------------------------------------------------------------------

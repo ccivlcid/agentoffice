@@ -9,7 +9,6 @@ export type AppLabels = {
   loadingSubtitle: string;
   viewTitles: Record<View, string>;
   announcementLabel: string;
-  roomManagerLabel: string;
   reportLabel: string;
   tasksPrimaryLabel: string;
   agentStatusLabel: string;
@@ -31,7 +30,6 @@ export function computeAppLabels(uiLanguage: UiLanguage): AppLabels {
       settings: pl({ ko: "설정", en: "Settings" }),
     },
     announcementLabel: pl({ ko: "전사 공지", en: "Announcement" }),
-    roomManagerLabel: pl({ ko: "사무실 관리", en: "Office Manager" }),
     reportLabel: pl({ ko: "보고서", en: "Reports" }),
     tasksPrimaryLabel: pl({ ko: "업무", en: "Tasks" }),
     agentStatusLabel: pl({ ko: "에이전트", en: "Agents" }),

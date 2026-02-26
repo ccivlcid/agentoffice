@@ -186,6 +186,33 @@ export function useI18n(preferredLocale?: string) {
   return { locale, localeTag: LOCALE_TAGS[locale], t };
 }
 
+// ── Post-it color scheme per task type ────────────────────────────────────────
+
+export interface PostitColor {
+  dark: string;
+  light: string;
+  foldDark: string;
+  foldLight: string;
+  tapeDark: string;
+  tapeLight: string;
+}
+
+export const POSTIT_COLORS: Record<TaskType, PostitColor> = {
+  general: { dark: "#b8a742", light: "#fef08a", foldDark: "#9a8a30", foldLight: "#eab308", tapeDark: "#d4c96080", tapeLight: "#fde68a90" },
+  development: { dark: "#2e6b8a", light: "#bae6fd", foldDark: "#1e5570", foldLight: "#38bdf8", tapeDark: "#5ba3c680", tapeLight: "#7dd3fc90" },
+  design: { dark: "#8b3a6a", light: "#fbcfe8", foldDark: "#6f2d55", foldLight: "#ec4899", tapeDark: "#c77daa80", tapeLight: "#f9a8d490" },
+  analysis: { dark: "#5b4a8a", light: "#e0d4fd", foldDark: "#483a70", foldLight: "#a78bfa", tapeDark: "#8b78b880", tapeLight: "#c4b5fd90" },
+  presentation: { dark: "#a0652e", light: "#fed7aa", foldDark: "#845020", foldLight: "#f97316", tapeDark: "#c99a6080", tapeLight: "#fdba7490" },
+  documentation: { dark: "#2e7a6a", light: "#ccfbf1", foldDark: "#1e6050", foldLight: "#14b8a6", tapeDark: "#5baa9a80", tapeLight: "#5eead490" },
+};
+
+/** Deterministic rotation angle (-2 to +2 degrees) seeded by task ID. */
+export function stickyRotation(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  return (h % 500) / 250;
+}
+
 // ── Label / badge helpers ──────────────────────────────────────────────────────
 
 export function taskStatusLabel(status: TaskStatus, t: TFunction) {

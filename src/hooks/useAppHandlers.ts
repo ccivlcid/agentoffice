@@ -292,7 +292,7 @@ export function useAppHandlers(params: UseAppHandlersParams) {
   }, [settings.language, loadDecisionInbox, setDecisionInboxItems, setDecisionReplyBusyKey, scheduleLiveSync]);
 
   return {
-    handleSendMessage, handleSendAnnouncement, handleSendDirective,
+    handleSendMessage, handleSendAnnouncement, handleSendTeamLeaderAnnouncement, handleSendDirective,
     handleCreateTask, handleUpdateTask, handleDeleteTask,
     handleAssignTask, handleRunTask, handleStopTask, handlePauseTask, handleResumeTask,
     handleSaveSettings, handleDismissAutoUpdateNotice,

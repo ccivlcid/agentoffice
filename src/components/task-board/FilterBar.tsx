@@ -1,24 +1,20 @@
-import type { Agent, Department } from '../../types';
-import AgentSelect from '../AgentSelect';
+import type { Department } from '../../types';
 import { useI18n, taskTypeLabel, TASK_TYPE_OPTIONS } from './taskBoardHelpers';
 import { Search } from 'lucide-react';
 
 export interface FilterBarProps {
-  agents: Agent[];
   departments: Department[];
   filterDept: string;
-  filterAgent: string;
   filterType: string;
   search: string;
   onFilterDept: (v: string) => void;
-  onFilterAgent: (v: string) => void;
   onFilterType: (v: string) => void;
   onSearch: (v: string) => void;
 }
 
 export function FilterBar({
-  agents, departments, filterDept, filterAgent, filterType, search,
-  onFilterDept, onFilterAgent, onFilterType, onSearch,
+  departments, filterDept, filterType, search,
+  onFilterDept, onFilterType, onSearch,
 }: FilterBarProps) {
   const { t, locale } = useI18n();
 
@@ -47,15 +43,6 @@ export function FilterBar({
           </option>
         ))}
       </select>
-
-      <AgentSelect
-        agents={agents}
-        departments={departments}
-        value={filterAgent}
-        onChange={onFilterAgent}
-        placeholder={t({ ko: '전체 에이전트', en: 'All Agents' })}
-        size="md"
-      />
 
       <select
         value={filterType}

@@ -56,7 +56,6 @@ export function TaskBoard({
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [showBulkHideModal, setShowBulkHideModal] = useState(false);
   const [filterDept, setFilterDept] = useState('');
-  const [filterAgent, setFilterAgent] = useState('');
   const [filterType, setFilterType] = useState('');
   const [search, setSearch] = useState('');
   const [showAllTasks, setShowAllTasks] = useState(false);
@@ -96,12 +95,11 @@ export function TaskBoard({
 
   const filteredTasks = useMemo(() => tasks.filter((t) => {
     if (filterDept && t.department_id !== filterDept) return false;
-    if (filterAgent && t.assigned_agent_id !== filterAgent) return false;
     if (filterType && t.task_type !== filterType) return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     if (!showAllTasks && hiddenTaskIds.has(t.id)) return false;
     return true;
-  }), [tasks, filterDept, filterAgent, filterType, search, hiddenTaskIds, showAllTasks]);
+  }), [tasks, filterDept, filterType, search, hiddenTaskIds, showAllTasks]);
 
   const tasksByStatus = useMemo(() => {
     const map: Record<string, Task[]> = {};
@@ -122,7 +120,7 @@ export function TaskBoard({
     return map;
   }, [subtasks]);
 
-  const activeFilterCount = [filterDept, filterAgent, filterType, search].filter(Boolean).length;
+  const activeFilterCount = [filterDept, filterType, search].filter(Boolean).length;
   const hiddenTaskCount = useMemo(() => {
     let count = 0;
     for (const task of tasks) {
@@ -143,7 +141,7 @@ export function TaskBoard({
         </span>
         <div className="ml-auto flex items-center gap-2">
           {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterDept(''); setFilterAgent(''); setFilterType(''); setSearch(''); }}
+            <button onClick={() => { setFilterDept(''); setFilterType(''); setSearch(''); }}
               className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800 hover:text-white">
               {t({ ko: '필터 초기화', en: 'Reset Filters' })}
             </button>
@@ -173,8 +171,8 @@ export function TaskBoard({
       </div>
 
       {/* Filter bar */}
-      <FilterBar agents={agents} departments={departments} filterDept={filterDept} filterAgent={filterAgent}
-        filterType={filterType} search={search} onFilterDept={setFilterDept} onFilterAgent={setFilterAgent}
+      <FilterBar departments={departments} filterDept={filterDept}
+        filterType={filterType} search={search} onFilterDept={setFilterDept}
         onFilterType={setFilterType} onSearch={setSearch} />
 
       {/* Kanban board — 스티커 메모처럼 컬럼 접기/펼치기 */}

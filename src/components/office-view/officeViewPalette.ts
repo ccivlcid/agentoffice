@@ -86,10 +86,10 @@ export let DEPT_THEME = DEPT_THEME_LIGHT;
 /** Call once at scene build time to keep all mutable theme exports in sync with the active mode.
  *  Animation ticker imports these as live ES-module bindings, so they see updates immediately. */
 export function syncPaletteTheme(isDark: boolean): void {
-  OFFICE_PASTEL       = isDark ? OFFICE_PASTEL_DARK       : OFFICE_PASTEL_LIGHT;
-  DEFAULT_CEO_THEME   = isDark ? DEFAULT_CEO_THEME_DARK   : DEFAULT_CEO_THEME_LIGHT;
+  OFFICE_PASTEL = isDark ? OFFICE_PASTEL_DARK : OFFICE_PASTEL_LIGHT;
+  DEFAULT_CEO_THEME = isDark ? DEFAULT_CEO_THEME_DARK : DEFAULT_CEO_THEME_LIGHT;
   DEFAULT_BREAK_THEME = isDark ? DEFAULT_BREAK_THEME_DARK : DEFAULT_BREAK_THEME_LIGHT;
-  DEPT_THEME          = isDark ? DEPT_THEME_DARK          : DEPT_THEME_LIGHT;
+  DEPT_THEME = isDark ? DEPT_THEME_DARK : DEPT_THEME_LIGHT;
 }
 
 export const LOCALE_TEXT = {
@@ -102,7 +102,7 @@ export const LOCALE_TEXT = {
   hint: {
     ko: "WASD/방향키/가상패드: CEO 이동  |  Enter: 상호작용",
     en: "WASD/Arrow/Virtual Pad: CEO Move  |  Enter: Interact",
-},
+  },
   mobileEnter: { ko: "Enter", en: "Enter" },
   mobileInteract: { ko: "상호작용", en: "Interact" },
   mobileMoveUp: { ko: "위로 이동", en: "Move up" },
@@ -134,17 +134,26 @@ export const LOCALE_TEXT = {
   meetingBadgeHold: { ko: "보류", en: "Hold" },
   kickoffLines: {
     ko: ["유관부서 영향도 확인중", "리스크/의존성 공유중", "일정/우선순위 조율중", "담당 경계 정의중"],
-    en: ["Checking cross-team impact", "Sharing risks/dependencies", "Aligning schedule/priorities", "Defining ownership boundaries"],
+    en: [
+      "Checking cross-team impact",
+      "Sharing risks/dependencies",
+      "Aligning schedule/priorities",
+      "Defining ownership boundaries",
+    ],
   },
   reviewLines: {
     ko: ["보완사항 반영 확인중", "최종안 Approved 검토중", "수정 아이디어 공유중", "결과물 교차 검토중"],
-    en: ["Verifying follow-up updates", "Reviewing final approval draft", "Sharing revision ideas", "Cross-checking deliverables"],
-
+    en: [
+      "Verifying follow-up updates",
+      "Reviewing final approval draft",
+      "Sharing revision ideas",
+      "Cross-checking deliverables",
+    ],
   },
   meetingTableHint: {
     ko: "회의 중: 테이블 클릭해 회의록 보기",
     en: "Meeting live: click table for minutes",
-},
+  },
   cliUsageTitle: { ko: "CLI 사용량", en: "CLI Usage" },
   cliConnected: { ko: "연결됨", en: "connected" },
   cliRefreshTitle: { ko: "사용량 새로고침", en: "Refresh usage data" },
@@ -161,25 +170,52 @@ export const LOCALE_TEXT = {
   conveneTeamLeaderMeeting: { ko: "팀장 회의 소집", en: "Convene team leader meeting" },
   conveneTeamLeaderMeetingA11y: { ko: "팀장만 소집하여 회의 시작", en: "Convene meeting with team leaders only" },
   noTeamLeaders: { ko: "등록된 팀장이 없습니다.", en: "No team leaders registered." },
-  noTeamLeadersHint: { ko: "에이전트 관리에서 역할을 팀장으로 설정하세요.", en: "Set agent role to team leader in Agent Manager." },
+  noTeamLeadersHint: {
+    ko: "에이전트 관리에서 역할을 팀장으로 설정하세요.",
+    en: "Set agent role to team leader in Agent Manager.",
+  },
   openAgentManager: { ko: "에이전트 관리", en: "Agent Manager" },
   dismiss: { ko: "닫기", en: "Dismiss" },
+  meetingLiveBanner: { ko: "회의 진행 중", en: "Meeting in progress" },
+  viewMeetingMinutes: { ko: "회의록 보기", en: "View minutes" },
 };
 
 export const BREAK_CHAT_MESSAGES: Record<SupportedLocale, string[]> = {
   ko: [
-    "커피 한 잔 더~", "오늘 점심 뭐 먹지?", "아 졸려...",
-    "주말에 뭐 해?", "이번 프로젝트 힘들다ㅋ", "카페라떼 최고!",
-    "오늘 날씨 좋다~", "야근 싫어ㅠ", "맛있는 거 먹고 싶다",
-    "조금만 쉬자~", "ㅋㅋㅋㅋ", "간식 왔다!", "5분만 더~",
-    "힘내자 파이팅!", "에너지 충전 중...", "집에 가고 싶다~",
+    "커피 한 잔 더~",
+    "오늘 점심 뭐 먹지?",
+    "아 졸려...",
+    "주말에 뭐 해?",
+    "이번 프로젝트 힘들다ㅋ",
+    "카페라떼 최고!",
+    "오늘 날씨 좋다~",
+    "야근 싫어ㅠ",
+    "맛있는 거 먹고 싶다",
+    "조금만 쉬자~",
+    "ㅋㅋㅋㅋ",
+    "간식 왔다!",
+    "5분만 더~",
+    "힘내자 파이팅!",
+    "에너지 충전 중...",
+    "집에 가고 싶다~",
   ],
   en: [
-    "One more cup of coffee~", "What should we eat for lunch?", "So sleepy...",
-    "Any weekend plans?", "This project is tough lol", "Cafe latte wins!",
-    "Nice weather today~", "I hate overtime...", "Craving something tasty",
-    "Let's take a short break~", "LOL", "Snacks are here!", "5 more minutes~",
-    "Let's go, fighting!", "Recharging energy...", "I want to go home~",
+    "One more cup of coffee~",
+    "What should we eat for lunch?",
+    "So sleepy...",
+    "Any weekend plans?",
+    "This project is tough lol",
+    "Cafe latte wins!",
+    "Nice weather today~",
+    "I hate overtime...",
+    "Craving something tasty",
+    "Let's take a short break~",
+    "LOL",
+    "Snacks are here!",
+    "5 more minutes~",
+    "Let's go, fighting!",
+    "Recharging energy...",
+    "I want to go home~",
   ],
 };
 

@@ -2,14 +2,11 @@ import { useCallback } from "react";
 import * as api from "../api";
 import type { Agent, Task, CompanyStats, SubTask, MeetingPresence, CompanySettings, Department } from "../types";
 import type { DecisionInboxItem } from "../components/chat/decision-inbox";
-import type { RoomThemeMap } from "../appHelpers";
 import {
   mergeSettingsWithDefaults,
-  isRoomThemeMap,
   readStoredClientLanguage,
   isUserLanguagePinned,
   syncClientLanguage,
-  ROOM_THEMES_STORAGE_KEY,
 } from "../appHelpers";
 import { detectBrowserLanguage } from "../i18n";
 import { DEFAULT_SETTINGS } from "../types";
@@ -24,21 +21,13 @@ type FetchAllSetters = {
   setMeetingPresence: React.Dispatch<React.SetStateAction<MeetingPresence[]>>;
   setDecisionInboxItems: React.Dispatch<React.SetStateAction<DecisionInboxItem[]>>;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  setCustomRoomThemes?: React.Dispatch<React.SetStateAction<RoomThemeMap>>;
 };
 
-type FetchAllRefs = {
-  hasLocalRoomThemesRef: React.MutableRefObject<boolean>;
-  initialRoomThemes: { themes: RoomThemeMap; hasStored: boolean };
-};
-
-export function useFetchAll(setters: FetchAllSetters, refs: FetchAllRefs) {
+export function useFetchAll(setters: FetchAllSetters) {
   const {
     setDepartments, setAgents, setTasks, setStats, setSettings,
     setSubtasks, setMeetingPresence, setDecisionInboxItems, setLoading,
-    setCustomRoomThemes,
   } = setters;
-  const { hasLocalRoomThemesRef, initialRoomThemes } = refs;
 
   return useCallback(async () => {
     try {
@@ -65,24 +54,6 @@ export function useFetchAll(setters: FetchAllSetters, refs: FetchAllRefs) {
       setSettings(nextSettings);
       syncClientLanguage(nextSettings.language);
 
-      const dbRoomThemes = isRoomThemeMap(nextSettings.roomThemes)
-        ? nextSettings.roomThemes as RoomThemeMap : undefined;
-
-      if (!hasLocalRoomThemesRef.current && dbRoomThemes && Object.keys(dbRoomThemes).length > 0) {
-        if (setCustomRoomThemes) setCustomRoomThemes(dbRoomThemes);
-        hasLocalRoomThemesRef.current = true;
-        try {
-          window.localStorage.setItem(ROOM_THEMES_STORAGE_KEY, JSON.stringify(dbRoomThemes));
-        } catch { /* ignore quota errors */ }
-      }
-      if (
-        hasLocalRoomThemesRef.current && Object.keys(initialRoomThemes.themes).length > 0 &&
-        (!dbRoomThemes || Object.keys(dbRoomThemes).length === 0)
-      ) {
-        api.saveRoomThemes(initialRoomThemes.themes).catch((error) => {
-          console.error("Room theme sync to DB failed:", error);
-        });
-      }
       if (shouldAutoAssignLanguage && mergedSettings.language !== autoDetectedLanguage) {
         api.saveSettings(nextSettings).catch((error) => {
           console.error("Auto language sync failed:", error);
@@ -123,6 +94,5 @@ export function useFetchAll(setters: FetchAllSetters, refs: FetchAllRefs) {
   }, [
     setDepartments, setAgents, setTasks, setStats, setSettings,
     setSubtasks, setMeetingPresence, setDecisionInboxItems, setLoading,
-    setCustomRoomThemes,
   ]);
 }

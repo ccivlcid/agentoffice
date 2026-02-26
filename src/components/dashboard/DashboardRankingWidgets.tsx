@@ -1,4 +1,4 @@
-import { getRankTier } from './dashboardHelpers';
+import { getPerformanceGrade } from "./dashboardHelpers";
 
 // ─── XP Progress Bar ───
 export function XpBar({ xp, maxXp, color }: { xp: number; maxXp: number; color: string }) {
@@ -17,26 +17,33 @@ export function XpBar({ xp, maxXp, color }: { xp: number; maxXp: number; color: 
   );
 }
 
-// ─── Rank Badge ───
-export function RankBadge({ xp, size = 'md' }: { xp: number; size?: 'sm' | 'md' | 'lg' }) {
-  const tier = getRankTier(xp);
+// ─── Grade Badge (S/A/B/C/D) ───
+export function GradeBadge({ xp, size = "md" }: { xp: number; size?: "sm" | "md" | "lg" }) {
+  const g = getPerformanceGrade(xp);
   const sizeClasses = {
-    sm: 'px-1.5 py-0.5 text-[8px] gap-0.5',
-    md: 'px-2 py-0.5 text-[10px] gap-1',
-    lg: 'px-3 py-1 text-xs gap-1',
+    sm: "px-1.5 py-0.5 text-[8px] gap-0.5",
+    md: "px-2 py-0.5 text-[10px] gap-1",
+    lg: "px-3 py-1 text-xs gap-1",
   };
+  const circleSize = { sm: "w-4 h-4 text-[8px]", md: "w-5 h-5 text-xs", lg: "w-6 h-6 text-sm" };
   return (
     <span
       className={`inline-flex items-center rounded-md font-black uppercase tracking-wider ${sizeClasses[size]}`}
       style={{
-        background: tier.glow,
-        color: tier.color,
-        border: `1px solid ${tier.color}50`,
-        boxShadow: `0 0 8px ${tier.glow}`,
-        textShadow: `0 0 6px ${tier.glow}`,
+        background: g.glow,
+        color: g.color,
+        border: `1px solid ${g.color}50`,
+        boxShadow: `0 0 8px ${g.glow}`,
+        textShadow: `0 0 6px ${g.glow}`,
       }}
     >
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold" style={{ backgroundColor: tier.color, color: '#1a1a2e' }}>{tier.label}</span> {tier.name}
+      <span
+        className={`inline-flex items-center justify-center rounded-full font-bold ${circleSize[size]}`}
+        style={{ backgroundColor: g.color, color: "#1a1a2e" }}
+      >
+        {g.grade}
+      </span>
+      {g.grade}
     </span>
   );
 }

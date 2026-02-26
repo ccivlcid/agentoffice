@@ -63,3 +63,9 @@ Thumbs.db
 
 # Playwright artifacts
 test-results/
+
+# Electron / Windows build
+release/
+release-new/
+dist-server/
+build/node/

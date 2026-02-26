@@ -10,6 +10,7 @@ import {
   fetchCodexUsage,
   fetchGeminiUsage,
 } from "./providers-usage.ts";
+import { withCliPathFallback } from "../core-cli-helpers.ts";
 
 export function initCliHelpers(ctx: RuntimeContext) {
   const db = ctx.db;
@@ -123,7 +124,10 @@ export function initCliHelpers(ctx: RuntimeContext) {
 
   function execWithTimeout(cmd: string, args: string[], timeoutMs: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      const opts: any = { timeout: timeoutMs };
+      const opts: any = {
+        timeout: timeoutMs,
+        env: { ...process.env, PATH: withCliPathFallback(process.env.PATH) },
+      };
       if (process.platform === "win32") opts.shell = true;
       const child = execFile(cmd, args, opts, (err, stdout) => {
         if (err) return reject(err);

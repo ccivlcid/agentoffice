@@ -1,5 +1,5 @@
 import type { DecisionInboxItem } from "./chat/decision-inbox";
-import { Menu, ClipboardList, Compass, Loader2, Wrench, Megaphone, Users, FileBarChart, Palette, MoreVertical } from "lucide-react";
+import { Menu, ClipboardList, Compass, Loader2, Wrench, Megaphone, Users, FileBarChart, MoreVertical } from "lucide-react";
 
 interface AppHeaderProps {
   viewTitle: string;
@@ -9,7 +9,6 @@ interface AppHeaderProps {
   agentManagerLabel: string;
   reportLabel: string;
   announcementLabel: string;
-  roomManagerLabel: string;
   decisionInboxItems: DecisionInboxItem[];
   decisionInboxLoading: boolean;
   theme: string;
@@ -21,7 +20,6 @@ interface AppHeaderProps {
   onOpenAgentStatus: () => void;
   onOpenReportHistory: () => void;
   onOpenAnnouncement: () => void;
-  onOpenRoomManager: () => void;
   onOpenAgentManager: () => void;
   onToggleTheme: () => void;
   onToggleMobileHeaderMenu: () => void;
@@ -31,10 +29,10 @@ interface AppHeaderProps {
 export function AppHeader(props: AppHeaderProps) {
   const {
     viewTitle, tasksPrimaryLabel, decisionLabel, agentStatusLabel, reportLabel,
-    announcementLabel, agentManagerLabel, roomManagerLabel, decisionInboxItems, decisionInboxLoading,
+    announcementLabel, agentManagerLabel, decisionInboxItems, decisionInboxLoading,
     theme, connected, mobileHeaderMenuOpen,
     onOpenMobileNav, onNavigateTasks, onOpenDecisionInbox,
-    onOpenAgentStatus, onOpenAgentManager, onOpenReportHistory, onOpenAnnouncement, onOpenRoomManager,
+    onOpenAgentStatus, onOpenAgentManager, onOpenReportHistory, onOpenAnnouncement,
     onToggleTheme, onToggleMobileHeaderMenu, onCloseMobileHeaderMenu,
   } = props;
 
@@ -89,10 +87,6 @@ export function AppHeader(props: AppHeaderProps) {
           <Megaphone width={16} height={16} className="sm:hidden" />
           <span className="hidden sm:inline-flex items-center gap-1.5"><Megaphone width={16} height={16} /> {announcementLabel}</span>
         </button>
-        <button onClick={onOpenRoomManager} className="header-action-btn header-action-btn-secondary mobile-hidden">
-          <span className="inline-flex items-center gap-1.5"><Palette width={16} height={16} /> {roomManagerLabel}</span>
-        </button>
-
         <button
           onClick={onToggleTheme}
           className="theme-toggle-btn"
@@ -145,11 +139,6 @@ export function AppHeader(props: AppHeaderProps) {
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:opacity-80"
                   style={{ color: "var(--th-text-primary)" }}>
                   <FileBarChart width={16} height={16} /> {reportLabel}
-                </button>
-                <button onClick={() => { onOpenRoomManager(); onCloseMobileHeaderMenu(); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:opacity-80"
-                  style={{ color: "var(--th-text-primary)" }}>
-                  <Palette width={16} height={16} /> {roomManagerLabel}
                 </button>
               </div>
             </>

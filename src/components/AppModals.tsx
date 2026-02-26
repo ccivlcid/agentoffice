@@ -5,11 +5,10 @@ import TerminalPanel from "./TerminalPanel";
 import TaskReportPopup from "./TaskReportPopup";
 import ReportHistory from "./ReportHistory";
 import AgentStatusPanel from "./AgentStatusPanel";
-import OfficeRoomManager from "./OfficeRoomManager";
 import AgentManagerModal from "./AgentManagerModal";
 import type { Agent, Department, Task, SubTask, Message } from "../types";
 import type { DecisionInboxItem } from "./chat/decision-inbox";
-import type { SubAgent, CrossDeptDelivery, CeoOfficeCall, TaskPanelTab, RoomThemeMap } from "../appHelpers";
+import type { SubAgent, CrossDeptDelivery, CeoOfficeCall, TaskPanelTab } from "../appHelpers";
 import type { TaskReportDetail } from "../api";
 import type { UiLanguage } from "../i18n";
 import * as api from "../api";
@@ -61,18 +60,10 @@ export type AppModalsProps = {
   showAgentStatus: boolean;
   setShowAgentStatus: (v: boolean) => void;
 
-  showRoomManager: boolean;
-  setShowRoomManager: (v: boolean) => void;
   showAgentManager: boolean;
   setShowAgentManager: (v: boolean) => void;
   hireFromBreakRoom?: boolean;
   onConsumedHireFromBreakRoom?: () => void;
-  roomManagerDepartments: { id: string; name: string }[];
-  customRoomThemes: RoomThemeMap;
-  setCustomRoomThemes: React.Dispatch<React.SetStateAction<RoomThemeMap>>;
-  setActiveRoomThemeTargetId: (v: string | null) => void;
-  hasLocalRoomThemesRef: React.MutableRefObject<boolean>;
-  roomThemesStorageKey: string;
 };
 
 export function AppModals(props: AppModalsProps) {
@@ -86,11 +77,8 @@ export function AppModals(props: AppModalsProps) {
     taskPanel, taskReport, setTaskReport,
     showReportHistory, setShowReportHistory,
     showAgentStatus, setShowAgentStatus,
-    showRoomManager, setShowRoomManager,
     showAgentManager, setShowAgentManager,
     hireFromBreakRoom, onConsumedHireFromBreakRoom,
-    roomManagerDepartments, customRoomThemes, setCustomRoomThemes,
-    setActiveRoomThemeTargetId, hasLocalRoomThemesRef, roomThemesStorageKey,
   } = props;
 
   return (
@@ -131,17 +119,6 @@ export function AppModals(props: AppModalsProps) {
       {taskReport && <TaskReportPopup report={taskReport} agents={agents} uiLanguage={uiLanguage} onClose={() => setTaskReport(null)} />}
       {showReportHistory && <ReportHistory agents={agents} uiLanguage={uiLanguage} onClose={() => setShowReportHistory(false)} />}
       {showAgentStatus && <AgentStatusPanel agents={agents} uiLanguage={uiLanguage} onClose={() => setShowAgentStatus(false)} />}
-      {showRoomManager && (
-        <OfficeRoomManager departments={roomManagerDepartments} customThemes={customRoomThemes}
-          onActiveDeptChange={setActiveRoomThemeTargetId}
-          onThemeChange={(themes) => {
-            setCustomRoomThemes(themes); hasLocalRoomThemesRef.current = true;
-            try { window.localStorage.setItem(roomThemesStorageKey, JSON.stringify(themes)); } catch { /* ignore */ }
-            api.saveRoomThemes(themes).catch((e) => console.error("Save room themes failed:", e));
-          }}
-          onClose={() => { setShowRoomManager(false); setActiveRoomThemeTargetId(null); }}
-          language={uiLanguage} />
-      )}
       {showAgentManager && (
         <AgentManagerModal
           agents={agents}

@@ -1,27 +1,27 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from "react";
 
-export type Locale = 'ko' | 'en';
+export type Locale = "ko" | "en";
 export type TFunction = (messages: Record<Locale, string>) => string;
 
-export const LANGUAGE_STORAGE_KEY = 'climpire.language';
+export const LANGUAGE_STORAGE_KEY = "climpire.language";
 export const LOCALE_TAGS: Record<Locale, string> = {
-  ko: 'ko-KR',
-  en: 'en-US',
+  ko: "ko-KR",
+  en: "en-US",
 };
 
 export function normalizeLocale(value: string | null | undefined): Locale | null {
-  const code = (value ?? '').toLowerCase();
-  if (code.startsWith('ko')) return 'ko';
-  if (code.startsWith('en')) return 'en';
+  const code = (value ?? "").toLowerCase();
+  if (code.startsWith("ko")) return "ko";
+  if (code.startsWith("en")) return "en";
   return null;
 }
 
 export function detectLocale(): Locale {
-  if (typeof window === 'undefined') return 'en';
+  if (typeof window === "undefined") return "en";
   return (
     normalizeLocale(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)) ??
     normalizeLocale(window.navigator.language) ??
-    'en'
+    "en"
   );
 }
 
@@ -34,15 +34,15 @@ export function useI18n(preferredLocale?: string) {
   }, [preferredLocale]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const sync = () => {
       setLocale(normalizeLocale(preferredLocale) ?? detectLocale());
     };
-    window.addEventListener('storage', sync);
-    window.addEventListener('climpire-language-change', sync as EventListener);
+    window.addEventListener("storage", sync);
+    window.addEventListener("climpire-language-change", sync as EventListener);
     return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('climpire-language-change', sync as EventListener);
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("climpire-language-change", sync as EventListener);
     };
   }, [preferredLocale]);
 
@@ -62,96 +62,145 @@ export function useNow(localeTag: string, t: TFunction) {
   }, []);
 
   const date = now.toLocaleDateString(localeTag, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
   });
 
   const time = now.toLocaleTimeString(localeTag, {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: false,
   });
 
   const hour = now.getHours();
   const briefing =
     hour < 12
-      ? t({ ko: '오전 브리핑', en: 'Morning Briefing' })
+      ? t({ ko: "오전 브리핑", en: "Morning Briefing" })
       : hour < 18
-        ? t({ ko: '오후 운영 점검', en: 'Afternoon Ops Check' })
-        : t({ ko: '저녁 마감 점검', en: 'Evening Wrap-up' });
+        ? t({ ko: "오후 운영 점검", en: "Afternoon Ops Check" })
+        : t({ ko: "저녁 마감 점검", en: "Evening Wrap-up" });
 
   return { date, time, briefing };
 }
 
 export function timeAgo(timestamp: number, localeTag: string): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  const rtf = new Intl.RelativeTimeFormat(localeTag, { numeric: 'auto' });
-  if (seconds < 60) return rtf.format(-seconds, 'second');
+  const rtf = new Intl.RelativeTimeFormat(localeTag, { numeric: "auto" });
+  if (seconds < 60) return rtf.format(-seconds, "second");
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return rtf.format(-minutes, 'minute');
+  if (minutes < 60) return rtf.format(-minutes, "minute");
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return rtf.format(-hours, 'hour');
+  if (hours < 24) return rtf.format(-hours, "hour");
   const days = Math.floor(hours / 24);
-  return rtf.format(-days, 'day');
+  return rtf.format(-days, "day");
 }
 
-// ─── RANK TIER SYSTEM ───
-export const RANK_TIERS = [
-  { name: 'BRONZE',   nameKo: '브론즈',   minXp: 0,     color: '#CD7F32', glow: 'rgba(205,127,50,0.35)', label: 'B' },
-  { name: 'SILVER',   nameKo: '실버',     minXp: 100,   color: '#C0C0C0', glow: 'rgba(192,192,192,0.35)', label: 'S' },
-  { name: 'GOLD',     nameKo: '골드',     minXp: 500,   color: '#FFD700', glow: 'rgba(255,215,0,0.35)',   label: 'G' },
-  { name: 'PLATINUM', nameKo: '플래티넘', minXp: 2000,  color: '#00c8b4', glow: 'rgba(0,200,180,0.35)',   label: 'P' },
-  { name: 'DIAMOND',  nameKo: '다이아',   minXp: 5000,  color: '#7df9ff', glow: 'rgba(125,249,255,0.35)', label: 'D' },
-  { name: 'MASTER',   nameKo: '마스터',   minXp: 15000, color: '#c45ff6', glow: 'rgba(196,95,246,0.35)',  label: 'M' },
-];
+// ─── PERFORMANCE GRADE SYSTEM (S/A/B/C/D) ───
+export const PERFORMANCE_GRADES = [
+  {
+    grade: "S" as const,
+    nameKo: "S등급",
+    nameEn: "Grade S",
+    minXp: 5000,
+    color: "#c45ff6",
+    glow: "rgba(196,95,246,0.35)",
+  },
+  {
+    grade: "A" as const,
+    nameKo: "A등급",
+    nameEn: "Grade A",
+    minXp: 2000,
+    color: "#7df9ff",
+    glow: "rgba(125,249,255,0.35)",
+  },
+  {
+    grade: "B" as const,
+    nameKo: "B등급",
+    nameEn: "Grade B",
+    minXp: 500,
+    color: "#FFD700",
+    glow: "rgba(255,215,0,0.35)",
+  },
+  {
+    grade: "C" as const,
+    nameKo: "C등급",
+    nameEn: "Grade C",
+    minXp: 100,
+    color: "#C0C0C0",
+    glow: "rgba(192,192,192,0.35)",
+  },
+  {
+    grade: "D" as const,
+    nameKo: "D등급",
+    nameEn: "Grade D",
+    minXp: 0,
+    color: "#CD7F32",
+    glow: "rgba(205,127,50,0.35)",
+  },
+] as const;
 
-export function getRankTier(xp: number) {
-  for (let i = RANK_TIERS.length - 1; i >= 0; i--) {
-    if (xp >= RANK_TIERS[i].minXp) return { ...RANK_TIERS[i], level: i };
+export type PerformanceGrade = (typeof PERFORMANCE_GRADES)[number];
+
+export function getPerformanceGrade(xp: number): PerformanceGrade {
+  for (const g of PERFORMANCE_GRADES) {
+    if (xp >= g.minXp) return g;
   }
-  return { ...RANK_TIERS[0], level: 0 };
+  return PERFORMANCE_GRADES[PERFORMANCE_GRADES.length - 1];
+}
+
+export function groupAgentsByGrade<T extends { xp: number }>(
+  agents: T[],
+): Array<{ grade: PerformanceGrade; agents: T[] }> {
+  const groups = PERFORMANCE_GRADES.map((g) => ({ grade: g, agents: [] as T[] }));
+  for (const agent of agents) {
+    const pg = getPerformanceGrade(agent.xp);
+    const idx = PERFORMANCE_GRADES.findIndex((g) => g.grade === pg.grade);
+    groups[idx].agents.push(agent);
+  }
+  for (const g of groups) g.agents.sort((a, b) => b.xp - a.xp);
+  return groups.filter((g) => g.agents.length > 0);
 }
 
 export const STATUS_LABELS: Record<string, { color: string; dot: string }> = {
-  inbox:       { color: 'bg-slate-500/20 text-slate-200 border-slate-400/30', dot: 'bg-slate-400' },
-  planned:     { color: 'bg-blue-500/20 text-blue-100 border-blue-400/30',   dot: 'bg-blue-400' },
-  in_progress: { color: 'bg-amber-500/20 text-amber-100 border-amber-400/30', dot: 'bg-amber-400' },
-  review:      { color: 'bg-violet-500/20 text-violet-100 border-violet-400/30', dot: 'bg-violet-400' },
-  done:        { color: 'bg-emerald-500/20 text-emerald-100 border-emerald-400/30', dot: 'bg-emerald-400' },
-  pending:     { color: 'bg-orange-500/20 text-orange-100 border-orange-400/30', dot: 'bg-orange-400' },
-  cancelled:   { color: 'bg-rose-500/20 text-rose-100 border-rose-400/30',   dot: 'bg-rose-400' },
+  inbox: { color: "bg-slate-500/20 text-slate-200 border-slate-400/30", dot: "bg-slate-400" },
+  planned: { color: "bg-blue-500/20 text-blue-100 border-blue-400/30", dot: "bg-blue-400" },
+  in_progress: { color: "bg-amber-500/20 text-amber-100 border-amber-400/30", dot: "bg-amber-400" },
+  review: { color: "bg-violet-500/20 text-violet-100 border-violet-400/30", dot: "bg-violet-400" },
+  done: { color: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30", dot: "bg-emerald-400" },
+  pending: { color: "bg-orange-500/20 text-orange-100 border-orange-400/30", dot: "bg-orange-400" },
+  cancelled: { color: "bg-rose-500/20 text-rose-100 border-rose-400/30", dot: "bg-rose-400" },
 };
 
 export function taskStatusLabel(status: string, t: TFunction) {
   switch (status) {
-    case 'inbox':
-      return t({ ko: '수신함', en: 'Inbox' });
-    case 'planned':
-      return t({ ko: '계획됨', en: 'Planned' });
-    case 'in_progress':
-      return t({ ko: '진행 중', en: 'In Progress' });
-    case 'review':
-      return t({ ko: '검토 중', en: 'Review' });
-    case 'done':
-      return t({ ko: '완료', en: 'Done' });
-    case 'pending':
-      return t({ ko: '보류', en: 'Pending' });
-    case 'cancelled':
-      return t({ ko: '취소됨', en: 'Cancelled' });
+    case "inbox":
+      return t({ ko: "수신함", en: "Inbox" });
+    case "planned":
+      return t({ ko: "계획됨", en: "Planned" });
+    case "in_progress":
+      return t({ ko: "진행 중", en: "In Progress" });
+    case "review":
+      return t({ ko: "검토 중", en: "Review" });
+    case "done":
+      return t({ ko: "완료", en: "Done" });
+    case "pending":
+      return t({ ko: "보류", en: "Pending" });
+    case "cancelled":
+      return t({ ko: "취소됨", en: "Cancelled" });
     default:
       return status;
   }
 }
 
 export const DEPT_COLORS = [
-  { bar: 'from-blue-500 to-cyan-400', badge: 'bg-blue-500/20 text-blue-200 border-blue-400/30' },
-  { bar: 'from-violet-500 to-fuchsia-400', badge: 'bg-violet-500/20 text-violet-200 border-violet-400/30' },
-  { bar: 'from-emerald-500 to-teal-400', badge: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30' },
-  { bar: 'from-amber-500 to-orange-400', badge: 'bg-amber-500/20 text-amber-100 border-amber-400/30' },
-  { bar: 'from-rose-500 to-pink-400', badge: 'bg-rose-500/20 text-rose-100 border-rose-400/30' },
-  { bar: 'from-cyan-500 to-sky-400', badge: 'bg-cyan-500/20 text-cyan-100 border-cyan-400/30' },
-  { bar: 'from-orange-500 to-red-400', badge: 'bg-orange-500/20 text-orange-100 border-orange-400/30' },
-  { bar: 'from-teal-500 to-lime-400', badge: 'bg-teal-500/20 text-teal-100 border-teal-400/30' },
+  { bar: "from-blue-500 to-cyan-400", badge: "bg-blue-500/20 text-blue-200 border-blue-400/30" },
+  { bar: "from-violet-500 to-fuchsia-400", badge: "bg-violet-500/20 text-violet-200 border-violet-400/30" },
+  { bar: "from-emerald-500 to-teal-400", badge: "bg-emerald-500/20 text-emerald-200 border-emerald-400/30" },
+  { bar: "from-amber-500 to-orange-400", badge: "bg-amber-500/20 text-amber-100 border-amber-400/30" },
+  { bar: "from-rose-500 to-pink-400", badge: "bg-rose-500/20 text-rose-100 border-rose-400/30" },
+  { bar: "from-cyan-500 to-sky-400", badge: "bg-cyan-500/20 text-cyan-100 border-cyan-400/30" },
+  { bar: "from-orange-500 to-red-400", badge: "bg-orange-500/20 text-orange-100 border-orange-400/30" },
+  { bar: "from-teal-500 to-lime-400", badge: "bg-teal-500/20 text-teal-100 border-teal-400/30" },
 ];
