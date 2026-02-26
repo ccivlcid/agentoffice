@@ -1,0 +1,11 @@
+---
+description: HAIFeR Agent 레포 전용 — 프로젝트 구조, 300줄 규칙, 리팩토링 참고.
+globs: ["server/**", "src/**"]
+---
+
+# HAIFeR Agent 전용 규칙
+
+- **구조**: 백엔드 `server/` (Express 5 + SQLite + WebSocket), 프론트엔드 `src/` (React 19 + Vite). README_ko.md 프로젝트 구조와 동일.
+- **단일 파일**: **300줄 이하** 유지. 초과 시 모듈/컴포넌트/훅으로 분리. 대상 목록·분리 방향은 `docs/REFACTOR_PLAN.md` 참고.
+- **네이밍**: 프론트 컴포넌트·페이지 PascalCase 또는 kebab-case, 훅·유틸 camelCase. 백엔드(server/)는 기존 TypeScript 관례 유지.
+- **리팩토링**: 새로 손대는 파일이 300줄을 넘으면 먼저 분리한 뒤 기능 추가/수정 진행.

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionEnd": [
+      {
+        "command": "node scripts/hooks/run-check.js"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node scripts/hooks/run-check.js"
+      }
+    ]
+  }
+}

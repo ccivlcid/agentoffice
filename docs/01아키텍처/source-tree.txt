@@ -1,0 +1,85 @@
+haiferclaw
+├── docs/
+│   ├── architecture/
+│   │   ├── architecture.json
+│   │   ├── backend-dependencies.mmd
+│   │   ├── CEO-STRUCTURE-MAP.md
+│   │   ├── frontend-imports.mmd
+│   │   ├── org-chart.mmd
+│   │   ├── README.md
+│   │   └── source-tree.txt
+│   ├── releases/          (v1.0.x ~ v1.1.x 릴리즈 노트)
+│   ├── reports/           (PPT 샘플, Sample_Slides)
+│   ├── DESIGN.md
+│   ├── RENEWAL_GUIDE.md
+│   └── ...
+├── public/
+│   ├── sprites/           (픽셀 아트 에이전트 스프라이트)
+│   ├── hyperclaw.svg
+│   └── ...
+├── server/
+│   ├── index.ts
+│   ├── server-main.ts
+│   ├── config/runtime.ts
+│   ├── db/runtime.ts
+│   ├── gateway/client.ts
+│   ├── oauth/helpers.ts
+│   ├── security/auth.ts
+│   ├── ws/hub.ts
+│   ├── types/             (lang.ts, runtime-context.ts)
+│   ├── modules/
+│   │   ├── routes.ts
+│   │   ├── routes/        (core, collab, collab/coordination, ops, ops/messages)
+│   │   ├── workflow/      (orchestration, agents, meeting-prompt-utils, meetings)
+│   │   ├── lifecycle.ts
+│   │   └── deferred-runtime.ts
+│   └── test/
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── api.ts
+│   ├── i18n.ts
+│   ├── index.css
+│   ├── ThemeContext.tsx
+│   ├── types/index.ts
+│   ├── hooks/             (usePolling, useWebSocket)
+│   ├── components/
+│   │   ├── chat/          (decision-inbox, decision-request)
+│   │   ├── OfficeView.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── TaskBoard.tsx
+│   │   ├── ChatPanel.tsx
+│   │   ├── SettingsPanel.tsx
+│   │   ├── SkillsLibrary.tsx
+│   │   ├── TerminalPanel.tsx
+│   │   └── ...
+│   └── test/
+├── scripts/
+│   ├── setup.mjs
+│   ├── auto-apply-v1.0.5.mjs
+│   ├── generate-architecture-report.mjs
+│   ├── generate-intro-ppt.mjs
+│   ├── preflight-public.sh
+│   ├── verify-security-audit-log.mjs
+│   ├── test-comm-status.mjs
+│   └── qa/                (api-comm-test, llm-comm-test, oauth, office-*, project-path-api-smoke, run-comm-suite)
+├── templates/
+│   └── AGENTS-empire.md
+├── tests/
+│   └── e2e/               (Playwright)
+├── slides/                (PPT 슬라이드 소스)
+├── tools/                 (taste-skill 등)
+├── index.html
+├── vite.config.ts
+├── tsconfig.json, tsconfig.app.json, tsconfig.node.json
+├── vitest.config.ts, playwright.config.ts
+├── .env.example
+├── install.sh
+├── install.ps1
+├── package.json
+├── pnpm-lock.yaml
+├── AGENTS.md
+├── CONTRIBUTING.md
+├── README.md
+├── README_ko.md
+└── LICENSE

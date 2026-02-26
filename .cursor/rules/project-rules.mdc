@@ -1,0 +1,49 @@
+---
+alwaysApply: true
+description: HAIFeR Web IDE 프로젝트 공통 규칙. 구조, 환경, 커밋/네이밍 등.
+---
+
+# HAIFeR Web IDE 프로젝트 룰
+
+## 프로젝트 개요
+
+- **이름**: HAIFeR Web IDE (Java 코드베이스 분석 및 빌드 자동화 플랫폼)
+- **구조**: 모노레포 (pnpm + Turbo)
+  - **프론트**: `apps/web` — Next.js 14, TypeScript, Tailwind, 포트 3001
+  - **백엔드**: `apps/api-backend` — FastAPI, Python 3.13, 포트 8000
+- **패키지 매니저**: 루트·웹 모두 **pnpm** (npm/yarn 사용 금지)
+- **DB**: Oracle 19c (서비스명 DHKDAIPO), ERD/스키마는 `.cursor/rules/erd.mdc` 참고
+
+## 환경 및 도구
+
+- **기본 셸**: Windows **PowerShell** (명령어·경로는 PowerShell 기준으로 작성)
+- **사용자 대화**: **한국어**로 응답 (다른 언어 요청이 없으면)
+- **경로 표기**: 백슬래시 `\` (Windows), 또는 슬래시 `/` 혼용 가능
+
+## 디렉터리·파일 규칙
+
+- **웹**: 페이지/컴포넌트는 `apps/web/app/` 하위, 컴포넌트는 기능별 폴더에 배치
+- **API**: 라우트는 `apps/api-backend/app/api/routes/`, 서비스는 `app/services/`, 스키마는 `app/schemas/`
+- **단일 파일**: **300줄 이하** 유지. 초과 시 모듈/컴포넌트/훅으로 분리
+- **네이밍**:
+  - 프론트: 컴포넌트·페이지 파일명 **PascalCase** 또는 kebab-case, 유틸·훅 **camelCase**
+  - 백엔드: 파일명 **snake_case**, 클래스 **PascalCase**, 함수·메서드 **snake_case**
+
+## 코드 품질
+
+- **공통**: `.cursor/rules/clean-code.mdc`, `codequality.mdc` 준수 (DRY, 단일 책임, 주석은 이유 위주)
+- **백엔드**: `.cursor/rules/fastapi.mdc`, `api-backend.mdc` 준수 (타입 힌트, Pydantic, SQL 인젝션 방지)
+- **프론트**: `.cursor/rules/nextjs.mdc`, `web-frontend.mdc`, `react.mdc`, `tailwind.mdc` 준수
+- **입출력**: API·함수 파라미터·반환값 검증 필수 (Pydantic 스키마, TypeScript 타입)
+
+## Git·커밋
+
+- **커밋 메시지**: Conventional Commits
+  - `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
+- **브랜치**: 기능은 `feature/이름`, 수정은 `fix/이름` 등
+
+## 참고 문서
+
+- 개발 워크플로우·코딩 컨벤션 상세: `docs/development.md`
+- 프로젝트 명령어 (PowerShell): `.cursor/commands/project-commands.md`
+- 진행 현황·스프린트: `.cursor/rules/project-progress.mdc`

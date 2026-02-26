@@ -1,0 +1,81 @@
+import { useMemo } from 'react';
+import type { Agent } from '../types';
+import { Bot } from 'lucide-react';
+import { AVATAR_ICONS } from '../constants/icons';
+
+/** Map agent IDs to sprite numbers (stable order, same as OfficeView) */
+export function buildSpriteMap(agents: Agent[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const sorted = [...agents].sort((a, b) => a.id.localeCompare(b.id));
+  sorted.forEach((a, i) => map.set(a.id, (i % 13) + 1));
+  return map;
+}
+
+/** Hook: memoized sprite map from agents array */
+export function useSpriteMap(agents: Agent[]): Map<string, number> {
+  return useMemo(() => buildSpriteMap(agents), [agents]);
+}
+
+/** Get the sprite number for an agent by ID */
+export function getSpriteNum(agents: Agent[], agentId: string): number | undefined {
+  const sorted = [...agents].sort((a, b) => a.id.localeCompare(b.id));
+  const idx = sorted.findIndex((a) => a.id === agentId);
+  return idx >= 0 ? (idx % 13) + 1 : undefined;
+}
+
+interface AgentAvatarProps {
+  agent: Agent | undefined;
+  agents?: Agent[];
+  spriteMap?: Map<string, number>;
+  size?: number;
+  className?: string;
+  rounded?: 'full' | 'xl' | '2xl';
+}
+
+/** Sprite-based avatar — pass either `agents` or `spriteMap` */
+export default function AgentAvatar({
+  agent,
+  agents,
+  spriteMap,
+  size = 28,
+  className = '',
+  rounded = 'full',
+}: AgentAvatarProps) {
+  const map = spriteMap ?? (agents ? buildSpriteMap(agents) : new Map());
+  const spriteNum = agent ? map.get(agent.id) : undefined;
+
+  const roundedClass = rounded === 'full' ? 'rounded-full' : rounded === 'xl' ? 'rounded-xl' : 'rounded-2xl';
+
+  if (spriteNum) {
+    return (
+      <div
+        className={`${roundedClass} overflow-hidden bg-gray-700 flex-shrink-0 ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <img
+          src={`/sprites/${spriteNum}-D-1.png`}
+          alt={agent?.name ?? ''}
+          className="w-full h-full object-cover"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      </div>
+    );
+  }
+  const iconSize = Math.round(size * 0.55);
+  const avatarEmoji = agent?.avatar_emoji;
+  const IconFromKey = typeof avatarEmoji === "string" && avatarEmoji in AVATAR_ICONS ? AVATAR_ICONS[avatarEmoji] : null;
+  return (
+    <div
+      className={`${roundedClass} bg-gray-700 flex items-center justify-center flex-shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    >
+      {IconFromKey ? (
+        <IconFromKey width={iconSize} height={iconSize} className="text-slate-300" aria-hidden />
+      ) : avatarEmoji ? (
+        <span style={{ fontSize: size * 0.6 }} aria-hidden>{avatarEmoji}</span>
+      ) : (
+        <Bot width={iconSize} height={iconSize} className="text-slate-400" aria-hidden />
+      )}
+    </div>
+  );
+}
