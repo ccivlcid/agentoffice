@@ -7,7 +7,7 @@ CEO 데스크에서 AI 에이전트 제국을 지휘하세요 — **CLI**, **OAu
 
 
 
-[빠른 시작](#빠른-시작) · [AI 설치 가이드](#ai-installation-guide) · 릴리즈 노트 · [$ 디렉티브 (자체 구현)](#dollar-command-logic) · [주요 기능](#주요-기능) · [스크린샷](#스크린샷) · [기술 스택](#기술-스택) · [프로바이더](#cli-프로바이더-설정) · [보안](#보안)
+[빠른 시작](#빠른-시작) · [AI 설치 가이드](#ai-installation-guide) · [릴리즈 노트](release/v1.2.0.md) · [$ 디렉티브 (자체 구현)](#dollar-command-logic) · [주요 기능](#주요-기능) · [스크린샷](#스크린샷) · [기술 스택](#기술-스택) · [프로바이더](#cli-프로바이더-설정) · [보안](#보안)
 
 [English](README.md) | **한국어**
 
@@ -43,15 +43,14 @@ HAIFeR Agent는 **코딩/개발 워크플로우에 특화된 AI 오케스트레�
 
 ---
 
-## 최신 릴리즈 (v1.1.9)
+## 최신 릴리즈 (v1.2.0)
 
-- **서브에이전트 상태 동기화 강화** — 순서가 뒤섞이거나 미등록된 `agent_status` 페이로드는 즉시 추가 대신 canonical live sync를 트리거하도록 변경했고, Codex thread 매핑에는 TTL+사이즈 상한 정리 로직을 추가해 오래된 바인딩 누적을 방지했습니다.
-- **Codex 스레드 바인딩 완료 시 즉시 정리** — 서브에이전트가 `done` 처리되면 연결된 Codex thread 바인딩을 즉시 삭제해, 지연 도착한 스트림 조각이 stale 항목을 잘못 종료시키지 않도록 했습니다.
-- **위임 Pause/Resume 리뷰 게이트 핫픽스** — 위임 실행을 pause로 중단할 때 graceful interrupt 종료코드로 연동 서브태스크가 `blocked`로 확정되지 않도록 수정했습니다.
-- **재개 후 위임 서브태스크 자동 정합성 처리** — 위임 실행 완료 시 연동 서브태스크를 자동 정합화(`성공=done / 실제 실패=blocked`)하고, 남은 서브태스크가 없으면 상위 리뷰 완료를 자동 재시도합니다.
-- **stale blocked 위임 자동 복구** — 리뷰 완료 단계에서 delegated task가 이미 `review`/`done`인 경우 남아 있던 `blocked` 위임 서브태스크를 자동 복구해, “팀장 회의 진행이 시작되지 않는” 반복 상태를 방지합니다.
-- **Decision Inbox 라운드 SKIP 라우팅 수정** — `review_round_pick -> skip_to_next_round` 경로의 `scheduleNextReviewRound` 런타임 배선을 복구해 응답 오류와 프로젝트 의사결정 모드(팀장 회의 진행)로의 오분기를 해결했습니다. 스케줄링 실패 시 회의 상태를 `revision_requested`로 롤백하는 안전장치도 추가했습니다.
-- 상세 문서: `[docs/releases/v1.1.9.md](docs/releases/v1.1.9.md)`
+- **팀장 회의 전용 채널** — `receiver_type: team_leaders` 전용 채널로 팀장만 수신·응답. "팀장 회의 소집" 시 동일 채팅 UI에서 팀장 전용 컨텍스트로 열리며, 백엔드 `POST /api/announcements/team-leaders` 및 `scheduleTeamLeaderReplies`로 팀장만 응답하도록 구성됩니다.
+- **도서관 (Library)** — 스킬 메뉴를 Library로 변경, 스킬 라이브러리 페이지·사이드바에 "도서관" 표기. 상단에 **사용법 및 가이드** 접이식 섹션을 추가해 필터·학습·업로드·등록 방법을 안내합니다.
+- **대시보드 및 오피스 UI** — 대시보드 헤더/액션, HUD 접기 상태(`localStorage`), 랭킹/길드/분대 블록, 미션 로그 내비게이션, 부서 카드 클릭 시 오피스 뷰. 사이드바는 Building2 아이콘만 사용(CEO 이미지/왕관 없음).
+- **OAuth 보안** — GitHub·Google OAuth 클라이언트 ID/시크릿을 **저장소에 포함하지 않음**. `.env`에 `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GOOGLE_CLIENT_SECRET`, `OAUTH_GITHUB_CLIENT_ID`(및 선택적 시크릿)만 설정해 사용합니다.
+- **에이전트/부서 CRUD, 스프라이트 #13, 커스텀 스킬 업로드, 모바일 프로젝트 매니저** 등 — 상세는 전체 노트를 참고하세요.
+- 상세 문서: [release/v1.2.0.md](release/v1.2.0.md)
 
 ---
 
@@ -662,7 +661,7 @@ HAIFeR Agent는 보안을 최우선으로 설계되었습니다:
 
 - **로컬 퍼스트 아키텍처** — 모든 데이터는 SQLite에 로컬로 저장; 외부 클라우드 서비스 불필요
 - **암호화된 OAuth 토큰** — 사용자 OAuth 토큰은 **서버 측 SQLite에만 저장**되며, `OAUTH_ENCRYPTION_SECRET`을 사용해 AES-256-GCM으로 암호화됩니다. 브라우저에는 리프레시 토큰이 전달되지 않습니다
-- **빌트인 OAuth Client ID** — 소스 코드에 포함된 GitHub/Google OAuth client ID/secret은 **공개 OAuth 앱 자격증명**이며 사용자 시크릿이 아닙니다. [Google 문서](https://developers.google.com/identity/protocols/oauth2/native-app)에 따르면 설치형/데스크톱 앱의 client secret은 "시크릿으로 취급되지 않습니다." 이는 오픈소스 앱(VS Code, Thunderbird, GitHub CLI 등)의 표준 관행입니다. 이 자격증명은 앱 자체를 식별할 뿐이며, 개인 토큰은 항상 별도로 암호화됩니다
+- **OAuth는 환경 변수만 사용** — GitHub·Google OAuth 클라이언트 ID/시크릿은 **저장소에 포함되지 않습니다**. `.env`에 `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GOOGLE_CLIENT_SECRET`, `OAUTH_GITHUB_CLIENT_ID`(및 선택적 `OAUTH_GITHUB_CLIENT_SECRET`)를 설정해 OAuth를 활성화하세요. 코드·저장소에는 자격증명을 두지 않습니다
 - **소스 코드에 개인 자격증명 없음** — 모든 사용자별 토큰(GitHub, Google OAuth)은 로컬 SQLite에 암호화되어 저장되며, 소스 코드에는 포함되지 않습니다
 - **저장소에 시크릿 없음** — 포괄적인 `.gitignore`로 `.env`, `*.pem`, `*.key`, `credentials.json` 등 차단
 - **프리플라이트 보안 검사** — 공개 릴리즈 전 `pnpm run preflight:public` 실행으로 작업 트리와 git 히스토리의 유출된 시크릿 스캔

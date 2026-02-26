@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.9-blue" alt="Releases" />
+  <img src="https://img.shields.io/badge/version-1.2.0-blue" alt="Releases" />
   <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node.js 22+" />
   <img src="https://img.shields.io/badge/license-Apache%202.0-orange" alt="License" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey" alt="Platform" />
@@ -20,7 +20,7 @@
 <p align="center">
   <a href="#quick-start">Quick Start</a> &middot;
   <a href="#ai-installation-guide">AI Install Guide</a> &middot;
-  <a href="docs/releases/v1.1.9.md">Release Notes</a> &middot;
+  <a href="release/v1.2.0.md">Release Notes</a> &middot;
   <a href="#openclaw-integration">OpenClaw</a> &middot;
   <a href="#dollar-command-logic">$ Command</a> &middot;
   <a href="#features">Features</a> &middot;
@@ -66,16 +66,15 @@ HyperClaw transforms your AI coding assistants — connected via **CLI**, **OAut
 
 ---
 
-## Latest Release (v1.1.9)
+## Latest Release (v1.2.0)
 
-- **Sub-agent Status Sync Hardening** — Unknown/out-of-order `agent_status` payloads now trigger canonical live sync, and Codex thread mappings are bounded with TTL+size pruning to prevent stale UI binding accumulation.
-- **Codex Thread Binding Cleanup on Done** — When a sub-agent completes, mapped Codex thread bindings are cleared immediately so delayed stream fragments cannot finalize stale entries.
-- **Delegated Pause/Resume Review-Gate Hotfix** — Paused delegated runs no longer mark linked subtasks as `blocked` from graceful interrupt exits.
-- **Post-resume Delegated Subtask Reconciliation** — After delegated runs complete, linked subtasks are reconciled automatically (`done` on success / `blocked` on real failure), and parent review completion is retried when all subtasks are resolved.
-- **Review-Gate Auto-heal for Stale Blocked Delegations** — Review completion now auto-recovers stale blocked delegated subtasks when their delegated task has already reached `review`/`done`, preventing repeated “team-lead meeting not starting” loops.
-- **Decision Inbox Round-Skip Routing Fix** — Fixed runtime wiring for `review_round_pick -> skip_to_next_round` (`scheduleNextReviewRound`) so round-skip replies no longer fail and misroute into project-level decision mode. Added rollback guard to restore `revision_requested` if scheduling fails.
+- **Team Leader Meeting Channel** — Dedicated channel (`receiver_type: team_leaders`) so only team leaders receive and reply. "Convene Team Leader Meeting" opens the same chat UI with team-leader-only context; backend `POST /api/announcements/team-leaders` and `scheduleTeamLeaderReplies` ensure only team leaders respond.
+- **Library (도서관)** — Skills menu renamed to Library; Skills Library page title and sidebar use "도서관". **Usage & Guide** collapsible section added at the top with instructions for filtering, learning, uploading, and registering skills.
+- **Dashboard & Office UI** — Dashboard header/actions, HUD fold state (`localStorage`), ranking/guild/squad blocks, mission log navigation, department card click to Office view. Sidebar uses Building2 icon only (no CEO image/crown).
+- **OAuth Security** — GitHub and Google OAuth client ID/secret are **no longer embedded**; set `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GOOGLE_CLIENT_SECRET`, `OAUTH_GITHUB_CLIENT_ID` (and optional secret) in `.env` only.
+- **Agent/Department CRUD, Sprite #13, Custom Skill Upload, Mobile Project Manager**, and more — see full notes.
 
-- Full notes: [`docs/releases/v1.1.9.md`](docs/releases/v1.1.9.md)
+- Full notes: [release/v1.2.0.md](release/v1.2.0.md)
 
 ---
 
@@ -196,6 +195,7 @@ Usage path: **Chat window > Report Request button**, then enter your request.
 | **Pixel-Art Office** | Animated office view with agents walking, working, and attending meetings across 6 departments |
 | **Kanban Task Board** | Full task lifecycle — Inbox, Planned, Collaborating, In Progress, Review, Done — with drag-and-drop |
 | **CEO Chat & Directives** | Direct communication with team leaders; `$` directives support meeting choice plus project path/context routing (`project_path`, `project_context`) |
+| **Team Leader Meeting** | Dedicated channel (team leaders only): convene from Office view, chat and replies visible only to team leaders via `receiver_type: team_leaders` |
 | **Multi-Provider Support** | Claude Code, Codex CLI, Gemini CLI, OpenCode, Antigravity — all from one dashboard |
 | **External API Providers** | Connect agents to external LLM APIs (OpenAI, Anthropic, Google, Ollama, OpenRouter, Together, Groq, Cerebras, custom) via Settings > API tab |
 | **OAuth Integration** | GitHub & Google OAuth with AES-encrypted token storage in local SQLite |
@@ -203,7 +203,7 @@ Usage path: **Chat window > Report Request button**, then enter your request.
 | **Active Agent Control** | Active-agent monitor with process/activity/idle metadata and direct kill action for stuck tasks |
 | **Task Report System** | Completion popup, report history, team report drilldown, and planning-lead consolidated archive |
 | **Agent Ranking & XP** | Agents earn XP for completed tasks; ranking board tracks top performers |
-| **Skills Library** | 600+ categorized skills (Frontend, Backend, Design, AI, DevOps, Security, etc.) |
+| **Skills Library (Library / 도서관)** | 600+ categorized skills; **Usage & Guide** section at top; custom skill upload, learn/unlearn, learning memory |
 | **Meeting System** | Planned and ad-hoc meetings with AI-generated minutes and multi-round review |
 | **Git Worktree Isolation** | Each agent works in isolated git branches, merged only on CEO approval |
 | **Multi-Language UI** | English, Korean, Japanese, Chinese — auto-detected or manually set |
@@ -714,7 +714,7 @@ HyperClaw is designed with security in mind:
 
 - **Local-first architecture** — All data stored locally in SQLite; no external cloud services required
 - **Encrypted OAuth tokens** — User-specific OAuth tokens are stored **server-side only** in SQLite, encrypted at rest using `OAUTH_ENCRYPTION_SECRET` (AES-256-GCM). The browser never receives refresh tokens
-- **Built-in OAuth Client IDs** — The GitHub and Google OAuth client IDs/secrets embedded in the source code are **public OAuth app credentials**, not user secrets. Per [Google's documentation](https://developers.google.com/identity/protocols/oauth2/native-app), client secrets for installed/desktop apps are "not treated as a secret." This is standard practice for open-source apps (VS Code, Thunderbird, GitHub CLI, etc.). These credentials only identify the app itself — your personal tokens are always encrypted separately
+- **OAuth via environment only** — GitHub and Google OAuth client ID/secret are **not** embedded in source. Set `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GOOGLE_CLIENT_SECRET`, `OAUTH_GITHUB_CLIENT_ID` (and optional `OAUTH_GITHUB_CLIENT_SECRET`) in `.env` to enable OAuth; no credentials in the repo.
 - **No personal credentials in source** — All user-specific tokens (GitHub, Google OAuth) are stored encrypted in the local SQLite database, never in source code
 - **No secrets in repo** — Comprehensive `.gitignore` blocks `.env`, `*.pem`, `*.key`, `credentials.json`, etc.
 - **Preflight security checks** — Run `pnpm run preflight:public` before any public release to scan for leaked secrets in both working tree and git history
