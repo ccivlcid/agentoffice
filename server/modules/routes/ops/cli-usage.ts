@@ -30,20 +30,24 @@ export function registerOpsCliUsage(ctx: RuntimeContext): { refreshCliUsageData:
     };
 
     const fetches = providers.map(async (p) => {
-      const tool = CLI_TOOLS.find((t: any) => t.name === p || (t as any).displayName === p);
-      if (!tool) {
-        usage[p] = { windows: [], error: "not_implemented" };
-        return;
-      }
-      if (!tool.checkAuth()) {
-        usage[p] = { windows: [], error: "unauthenticated" };
-        return;
-      }
-      const fetcher = fetchMap[p];
-      if (fetcher) {
-        usage[p] = await fetcher();
-      } else {
-        usage[p] = { windows: [], error: "not_implemented" };
+      try {
+        const tool = CLI_TOOLS.find((t: any) => t.name === p || (t as any).displayName === p);
+        if (!tool) {
+          usage[p] = { windows: [], error: "not_implemented" };
+          return;
+        }
+        if (!tool.checkAuth()) {
+          usage[p] = { windows: [], error: "unauthenticated" };
+          return;
+        }
+        const fetcher = fetchMap[p];
+        if (fetcher) {
+          usage[p] = await fetcher();
+        } else {
+          usage[p] = { windows: [], error: "not_implemented" };
+        }
+      } catch (e) {
+        usage[p] = { windows: [], error: String(e) };
       }
     });
 
@@ -62,7 +66,12 @@ export function registerOpsCliUsage(ctx: RuntimeContext): { refreshCliUsageData:
   app.get("/api/cli-usage", async (_req: any, res: any) => {
     let usage = readCliUsageFromDb();
     if (Object.keys(usage).length === 0) {
-      usage = await refreshCliUsageData();
+      try {
+        usage = await refreshCliUsageData();
+      } catch (e) {
+        console.error("[api] cli-usage refresh failed:", e);
+        usage = {};
+      }
     }
     res.json({ ok: true, usage });
   });
