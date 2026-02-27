@@ -103,8 +103,7 @@ Detect the language of the `$` message and use that language for ALL subsequent 
 Ask in the user's detected language:
 - KO: `기존 프로젝트인가요? 신규 프로젝트인가요?`
 - EN: `Is this an existing project or a new project?`
-- JA: `既存プロジェクトですか？新規プロジェクトですか？`
-- ZH: `这是已有项目还是新项目？`
+
 
 #### If user says "existing project"
 
