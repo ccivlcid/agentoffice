@@ -9,6 +9,7 @@ import {
   fetchClaudeUsage,
   fetchCodexUsage,
   fetchGeminiUsage,
+  fetchCursorUsage,
 } from "./providers-usage.ts";
 import { withCliPathFallback } from "../core-cli-helpers.ts";
 
@@ -120,6 +121,19 @@ export function initCliHelpers(ctx: RuntimeContext) {
         return false;
       },
     },
+    {
+      name: "agent",            // Cursor CLI binary name
+      displayName: "cursor",    // provider ID used throughout the system
+      authHint: "Run: agent login",
+      checkAuth: () => {
+        const home = os.homedir();
+        // ~/.cursor/cli-config.json contains session/credentials
+        if (fileExistsNonEmpty(path.join(home, ".cursor", "cli-config.json"))) return true;
+        // CURSOR_API_KEY env var for API key auth
+        if (process.env.CURSOR_API_KEY) return true;
+        return false;
+      },
+    },
   ];
 
   function execWithTimeout(cmd: string, args: string[], timeoutMs: number): Promise<string> {
@@ -163,7 +177,8 @@ export function initCliHelpers(ctx: RuntimeContext) {
     const results = await Promise.all(CLI_TOOLS.map((t) => detectCliTool(t)));
     const out: Record<string, any> = {};
     for (let i = 0; i < CLI_TOOLS.length; i++) {
-      out[CLI_TOOLS[i].name] = results[i];
+      const key = (CLI_TOOLS[i] as any).displayName ?? CLI_TOOLS[i].name;
+      out[key] = results[i];
     }
     return out;
   }
@@ -177,6 +192,7 @@ export function initCliHelpers(ctx: RuntimeContext) {
     fetchClaudeUsage,
     fetchCodexUsage,
     fetchGeminiUsage,
+    fetchCursorUsage,
     CLI_TOOLS,
     execWithTimeout,
     detectCliTool,

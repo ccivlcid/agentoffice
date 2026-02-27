@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Agent, MeetingMinute, Task } from '../types';
 import * as api from '../api';
+import { useModalFocus } from '../hooks/useModalFocus';
 import AgentAvatar from './AgentAvatar';
 import { useI18n } from '../i18n';
 import { STATUS_BADGES, type TaskLogEntry, TERMINAL_TAIL_LINES, TERMINAL_TASK_LOG_LIMIT } from './terminal/TerminalTypes';
@@ -26,6 +27,8 @@ export default function TerminalPanel({ taskId, task, agent, agents, initialTab 
   const [activeTab, setActiveTab] = useState<'terminal' | 'minutes'>(initialTab);
   const preRef = useRef<HTMLPreElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalFocus(true, panelRef);
   const { t, locale } = useI18n();
 
   const tr = (ko: string, en: string, ja = en, zh = en) => t({ ko, en, ja, zh });
@@ -119,7 +122,7 @@ export default function TerminalPanel({ taskId, task, agent, agents, initialTab 
     ? [...progressHints.hints].reverse().find((h) => h.phase === 'use') ?? latestHint : null;
 
   return (
-    <div className="terminal-panel-shell fixed inset-0 z-50 flex w-full max-w-full flex-col shadow-2xl lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[560px] lg:border-l">
+    <div ref={panelRef} className="terminal-panel-shell fixed inset-0 z-50 flex w-full max-w-full flex-col shadow-2xl lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[560px] lg:border-l">
       {/* Header */}
       <div className="terminal-panel-header flex items-center gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">

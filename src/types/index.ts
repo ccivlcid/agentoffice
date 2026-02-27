@@ -21,7 +21,7 @@ export interface Department {
 // Agent roles
 export type AgentRole = 'team_leader' | 'senior' | 'junior' | 'intern';
 export type AgentStatus = 'idle' | 'working' | 'break' | 'offline';
-export type CliProvider = 'claude' | 'codex' | 'gemini' | 'opencode' | 'copilot' | 'antigravity' | 'api';
+export type CliProvider = 'claude' | 'codex' | 'gemini' | 'opencode' | 'cursor' | 'copilot' | 'antigravity' | 'api';
 export type MeetingReviewDecision = 'reviewing' | 'approved' | 'hold';
 
 export interface Agent {
@@ -296,6 +296,7 @@ export const DEFAULT_SETTINGS: CompanySettings = {
     codex:       { model: "gpt-5.3-codex", reasoningLevel: "xhigh", subModel: "gpt-5.3-codex", subModelReasoningLevel: "high" },
     gemini:      { model: "gemini-3-pro-preview" },
     opencode:    { model: "github-copilot/claude-sonnet-4.6" },
+    cursor:      { model: "auto" },
     copilot:     { model: "github-copilot/claude-sonnet-4.6" },
     antigravity: { model: "google/antigravity-gemini-3-pro" },
   },

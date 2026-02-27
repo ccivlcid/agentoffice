@@ -15,10 +15,8 @@ export function registerTaskTimeline(ctx: RuntimeContext): void {
 
     const rows = db
       .prepare(
-        `SELECT tl.id, tl.kind, tl.message, tl.created_at,
-                tl.agent_id, a.name AS agent_name
+        `SELECT tl.id, tl.kind, tl.message, tl.created_at
          FROM task_logs tl
-         LEFT JOIN agents a ON a.id = tl.agent_id
          WHERE tl.task_id = ?
          ORDER BY tl.created_at ASC`
       )

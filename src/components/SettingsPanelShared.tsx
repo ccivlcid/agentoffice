@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Circle, Rocket, Globe, Plug } from "lucide-react";
+import { Circle, Rocket, Globe, Plug, MousePointer2 } from "lucide-react";
 import { Icon } from "./ui/Icon";
 import type { LangText } from "../i18n";
 import { pickLang } from "../i18n";
@@ -107,6 +107,7 @@ export const CLI_INFO: Record<string, { label: string; icon: React.ReactNode }> 
   codex: { label: "Codex CLI", icon: <CliChatGPTLogo /> },
   gemini: { label: "Gemini CLI", icon: <CliGeminiLogo /> },
   opencode: { label: "OpenCode", icon: <Icon icon={Circle} size="sm" className="text-slate-200" /> },
+  cursor: { label: "Cursor CLI", icon: <Icon icon={MousePointer2} size="sm" className="text-slate-200" /> },
   copilot: { label: "GitHub Copilot", icon: <Icon icon={Rocket} size="sm" className="text-slate-200" /> },
   antigravity: { label: "Antigravity", icon: <Icon icon={Globe} size="sm" className="text-slate-200" /> },
 };

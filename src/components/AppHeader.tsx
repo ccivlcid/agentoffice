@@ -1,7 +1,23 @@
 import type { DecisionInboxItem } from "./chat/decision-inbox";
+import type { View } from "../appHelpers";
+import { useI18n } from "../i18n";
 import { Menu, ClipboardList, Compass, Loader2, Wrench, Megaphone, Users, FileBarChart, MoreVertical } from "lucide-react";
 
+/** 뷰별 헤더 액션: primary로 강조할 버튼 */
+const VIEW_PRIMARY_ACTION: Record<View, "tasks" | "report" | "announcement" | null> = {
+  office: "announcement",
+  directives: "tasks",
+  dashboard: "tasks",
+  tasks: "tasks",
+  deliverables: "report",
+  skills: null,
+  "skills-mcp": null,
+  "skills-rules": null,
+  settings: null,
+};
+
 interface AppHeaderProps {
+  view: View;
   viewTitle: string;
   tasksPrimaryLabel: string;
   decisionLabel: string;
@@ -28,13 +44,23 @@ interface AppHeaderProps {
 
 export function AppHeader(props: AppHeaderProps) {
   const {
-    viewTitle, tasksPrimaryLabel, decisionLabel, agentStatusLabel, reportLabel,
+    view, viewTitle, tasksPrimaryLabel, decisionLabel, agentStatusLabel, reportLabel,
     announcementLabel, agentManagerLabel, decisionInboxItems, decisionInboxLoading,
     theme, connected, mobileHeaderMenuOpen,
     onOpenMobileNav, onNavigateTasks, onOpenDecisionInbox,
     onOpenAgentStatus, onOpenAgentManager, onOpenReportHistory, onOpenAnnouncement,
     onToggleTheme, onToggleMobileHeaderMenu, onCloseMobileHeaderMenu,
   } = props;
+  const { t } = useI18n();
+
+  const primaryAction = VIEW_PRIMARY_ACTION[view];
+  const openNavLabel = t({ ko: "메뉴 열기", en: "Open navigation" });
+  const closeMenuLabel = t({ ko: "메뉴 닫기", en: "Close menu" });
+  const themeLightLabel = t({ ko: "라이트 모드로 전환", en: "Switch to light mode" });
+  const themeDarkLabel = t({ ko: "다크 모드로 전환", en: "Switch to dark mode" });
+  const tasksIsPrimary = primaryAction === "tasks";
+  const reportIsPrimary = primaryAction === "report";
+  const announcementIsPrimary = primaryAction === "announcement";
 
   return (
     <header
@@ -44,9 +70,10 @@ export function AppHeader(props: AppHeaderProps) {
       <div className="flex min-w-0 items-center gap-2">
         <button
           onClick={onOpenMobileNav}
-          className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition lg:hidden"
+          className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition md:hidden"
           style={{ border: "1px solid var(--th-border)", background: "var(--th-bg-surface)", color: "var(--th-text-secondary)" }}
-          aria-label="Open navigation"
+          aria-label={openNavLabel}
+          title={openNavLabel}
         >
           <Menu width={18} height={18} />
         </button>
@@ -56,7 +83,12 @@ export function AppHeader(props: AppHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <button onClick={onNavigateTasks} className="header-action-btn header-action-btn-primary" aria-label={tasksPrimaryLabel}>
+        <button
+          onClick={onNavigateTasks}
+          className={tasksIsPrimary ? "header-action-btn header-action-btn-primary" : "header-action-btn header-action-btn-secondary"}
+          aria-label={tasksPrimaryLabel}
+          title={tasksPrimaryLabel}
+        >
           <ClipboardList width={16} height={16} className="sm:hidden" />
           <span className="hidden sm:inline-flex items-center gap-1.5"><ClipboardList width={16} height={16} /> {tasksPrimaryLabel}</span>
         </button>
@@ -65,6 +97,7 @@ export function AppHeader(props: AppHeaderProps) {
           disabled={decisionInboxLoading}
           className={`header-action-btn header-action-btn-secondary disabled:cursor-wait disabled:opacity-60${decisionInboxItems.length > 0 ? " decision-has-pending" : ""}`}
           aria-label={decisionLabel}
+          title={decisionLabel}
         >
           {decisionInboxLoading
             ? <Loader2 width={16} height={16} className="animate-spin sm:hidden" />
@@ -74,24 +107,44 @@ export function AppHeader(props: AppHeaderProps) {
           </span>
           {decisionInboxItems.length > 0 && <span className="header-decision-badge">{decisionInboxItems.length}</span>}
         </button>
-        <button onClick={onOpenAgentStatus} className="header-action-btn header-action-btn-secondary mobile-hidden">
+        <button
+          onClick={onOpenAgentStatus}
+          className="header-action-btn header-action-btn-secondary mobile-hidden"
+          aria-label={agentStatusLabel}
+          title={agentStatusLabel}
+        >
           <span className="inline-flex items-center gap-1.5"><Wrench width={16} height={16} /> {agentStatusLabel}</span>
         </button>
-        <button onClick={onOpenAgentManager} className="header-action-btn header-action-btn-secondary mobile-hidden">
+        <button
+          onClick={onOpenAgentManager}
+          className="header-action-btn header-action-btn-secondary mobile-hidden"
+          aria-label={agentManagerLabel}
+          title={agentManagerLabel}
+        >
           <span className="inline-flex items-center gap-1.5"><Users width={16} height={16} /> {agentManagerLabel}</span>
         </button>
-        <button onClick={onOpenReportHistory} className="header-action-btn header-action-btn-secondary mobile-hidden">
+        <button
+          onClick={onOpenReportHistory}
+          className={reportIsPrimary ? "header-action-btn header-action-btn-primary mobile-hidden" : "header-action-btn header-action-btn-secondary mobile-hidden"}
+          aria-label={reportLabel}
+          title={reportLabel}
+        >
           <span className="inline-flex items-center gap-1.5"><FileBarChart width={16} height={16} /> {reportLabel}</span>
         </button>
-        <button onClick={onOpenAnnouncement} className="header-action-btn header-action-btn-secondary">
+        <button
+          onClick={onOpenAnnouncement}
+          className={announcementIsPrimary ? "header-action-btn header-action-btn-primary" : "header-action-btn header-action-btn-secondary"}
+          aria-label={announcementLabel}
+          title={announcementLabel}
+        >
           <Megaphone width={16} height={16} className="sm:hidden" />
           <span className="hidden sm:inline-flex items-center gap-1.5"><Megaphone width={16} height={16} /> {announcementLabel}</span>
         </button>
         <button
           onClick={onToggleTheme}
           className="theme-toggle-btn"
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "라이트 모드" : "다크 모드"}
+          aria-label={theme === "dark" ? themeLightLabel : themeDarkLabel}
+          title={theme === "dark" ? themeLightLabel : themeDarkLabel}
         >
           <span className="theme-toggle-icon">
             {theme === "dark" ? (
@@ -116,13 +169,14 @@ export function AppHeader(props: AppHeaderProps) {
             onClick={onToggleMobileHeaderMenu}
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg transition"
             style={{ border: "1px solid var(--th-border)", background: "var(--th-bg-surface)", color: "var(--th-text-secondary)" }}
-            aria-label="더보기 메뉴"
+            aria-label={t({ ko: "더보기 메뉴", en: "More menu" })}
+            title={t({ ko: "더보기 메뉴", en: "More menu" })}
           >
             <MoreVertical width={18} height={18} />
           </button>
           {mobileHeaderMenuOpen && (
             <>
-              <button className="fixed inset-0 z-40" onClick={onCloseMobileHeaderMenu} aria-label="Close menu" />
+              <button className="fixed inset-0 z-40" onClick={onCloseMobileHeaderMenu} aria-label={closeMenuLabel} />
               <div className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-lg py-1 shadow-lg"
                 style={{ border: "1px solid var(--th-border)", background: "var(--th-bg-surface)" }}>
                 <button onClick={() => { onOpenAgentStatus(); onCloseMobileHeaderMenu(); }}

@@ -1,9 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Agent } from '../types';
 import type { TaskReportDetail } from '../api';
 import { archiveTaskReport, getTaskReportDetail } from '../api';
 import type { UiLanguage } from '../i18n';
 import { pickLang } from '../i18n';
+import { useModalFocus } from '../hooks/useModalFocus';
 import AgentAvatar from './AgentAvatar';
 import { fmtTime, elapsed, projectNameFromPath } from './TaskReportPopupHelpers';
 import TaskReportPlanningSummary from './TaskReportPlanningSummary';
@@ -18,6 +19,8 @@ interface TaskReportPopupProps {
 
 export default function TaskReportPopup({ report, agents, uiLanguage, onClose }: TaskReportPopupProps) {
   const t = (text: { ko: string; en: string; ja?: string; zh?: string }) => pickLang(uiLanguage, text);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useModalFocus(true, contentRef);
 
   const [currentReport, setCurrentReport] = useState<TaskReportDetail>(report);
   const [refreshingArchive, setRefreshingArchive] = useState(false);
@@ -80,6 +83,7 @@ export default function TaskReportPopup({ report, agents, uiLanguage, onClose }:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={contentRef}
         className="relative mx-4 w-full max-w-4xl rounded-2xl border border-emerald-500/30 bg-slate-900 shadow-2xl shadow-emerald-500/10"
         onClick={(e) => e.stopPropagation()}
       >

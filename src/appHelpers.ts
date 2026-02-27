@@ -39,7 +39,7 @@ export interface OAuthCallbackResult {
   error: string | null;
 }
 
-export type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "skills" | "settings";
+export type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "skills" | "skills-mcp" | "skills-rules" | "settings";
 export type TaskPanelTab = "terminal" | "minutes";
 export type RuntimeOs = "windows" | "mac" | "linux" | "unknown";
 export type RoomThemeMap = Record<string, RoomTheme>;

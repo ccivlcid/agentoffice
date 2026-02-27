@@ -187,6 +187,11 @@ export default function App() {
       clean.searchParams.delete("oauth_error");
       window.history.replaceState({}, "", clean.pathname + clean.search);
       setView("settings");
+      return;
+    }
+    const viewFromUrl = params.get("view");
+    if (viewFromUrl === "deliverables" || viewFromUrl === "directives") {
+      setView(viewFromUrl);
     }
   }, []);
   // 세션(API 토큰) 부트스트랩 후 초기 데이터 로드 — 401 연쇄 방지
@@ -318,7 +323,7 @@ export default function App() {
   return (
     <I18nProvider language={uiLanguage}>
       <div className="app-shell flex h-[100dvh] min-h-[100dvh] overflow-hidden">
-        <div className="hidden lg:flex lg:flex-shrink-0">
+        <div className="hidden md:flex md:flex-shrink-0">
           <Sidebar
             currentView={view}
             onChangeView={setView}
@@ -331,12 +336,12 @@ export default function App() {
         {mobileNavOpen && (
           <button
             aria-label="Close navigation"
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
             onClick={() => setMobileNavOpen(false)}
           />
         )}
         <div
-          className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:hidden ${mobileNavOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"}`}
+          className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:hidden ${mobileNavOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"}`}
         >
           <Sidebar
             currentView={view}
@@ -353,6 +358,7 @@ export default function App() {
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
           <AppHeader
+            view={view}
             viewTitle={labels.viewTitles[view] ?? ""}
             tasksPrimaryLabel={labels.tasksPrimaryLabel}
             decisionLabel={labels.decisionLabel}
@@ -472,7 +478,9 @@ export default function App() {
                 onNavigateToDirectives={() => setView("directives")}
               />
             )}
-            {view === "skills" && <SkillsLibrary agents={agents} />}
+            {(view === "skills" || view === "skills-mcp" || view === "skills-rules") && (
+              <SkillsLibrary agents={agents} initialTab={view === "skills-mcp" ? "mcp" : view === "skills-rules" ? "rules" : "skills"} />
+            )}
             {view === "settings" && (
               <SettingsPanel
                 settings={settings}

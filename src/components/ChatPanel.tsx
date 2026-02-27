@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Agent, Message } from '../types';
+import { useModalFocus } from '../hooks/useModalFocus';
 import { Megaphone } from 'lucide-react';
 import { buildSpriteMap } from './AgentAvatar';
 import { useI18n } from '../i18n';
@@ -56,6 +57,8 @@ export function ChatPanel({
   const [decisionReplyKey, setDecisionReplyKey] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalFocus(true, panelRef);
   const spriteMap = useMemo(() => buildSpriteMap(agents), [agents]);
   const { t, locale } = useI18n();
   const isKorean = locale.startsWith('ko');
@@ -213,7 +216,7 @@ export function ChatPanel({
   const isAnnouncementMode = mode === 'announcement';
 
   return (
-    <div className="fixed inset-0 z-50 flex h-full w-full flex-col bg-gray-900 shadow-2xl lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:border-l lg:border-gray-700">
+    <div ref={panelRef} className="fixed inset-0 z-50 flex h-full w-full flex-col bg-gray-900 shadow-2xl lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:border-l lg:border-gray-700">
       <ChatPanelHeader
         selectedAgent={selectedAgent}
         chatContext={chatContext ?? null}

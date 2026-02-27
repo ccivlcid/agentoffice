@@ -94,7 +94,7 @@ export function migrateMessagesDirectiveType(db: Database): void {
           id TEXT PRIMARY KEY,
           sender_type TEXT NOT NULL CHECK(sender_type IN ('ceo','agent','system')),
           sender_id TEXT,
-          receiver_type TEXT NOT NULL CHECK(receiver_type IN ('agent','department','all')),
+          receiver_type TEXT NOT NULL CHECK(receiver_type IN ('agent','department','all','team_leaders')),
           receiver_id TEXT,
           content TEXT NOT NULL,
           message_type TEXT DEFAULT 'chat' CHECK(message_type IN ('chat','task_assign','announcement','directive','report','status_update')),
@@ -119,6 +119,59 @@ export function migrateMessagesDirectiveType(db: Database): void {
     db.exec("PRAGMA foreign_keys = ON");
   }
   db.exec("CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_type, receiver_id, created_at DESC)");
+}
+
+const RECEIVER_TYPE_CHECK_FULL = "CHECK(receiver_type IN ('agent','department','all','team_leaders'))";
+
+export function migrateMessagesReceiverTypeTeamLeaders(db: Database): void {
+  const row = db.prepare(`
+    SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'messages'
+  `).get() as { sql?: string } | undefined;
+  const ddl = row?.sql ?? "";
+  if (ddl.includes("'team_leaders'")) return;
+
+  console.log("[HyperClaw] Migrating messages.receiver_type CHECK to include 'team_leaders'");
+  const oldTable = "messages_receiver_team_leaders_old";
+  db.exec("PRAGMA foreign_keys = OFF");
+  try {
+    db.exec("BEGIN");
+    try {
+      db.exec(`ALTER TABLE messages RENAME TO ${oldTable}`);
+      const oldCols = db.prepare(`PRAGMA table_info(${oldTable})`).all() as Array<{ name: string }>;
+      const hasIdempotencyKey = oldCols.some((c) => c.name === "idempotency_key");
+      const idempotencyExpr = hasIdempotencyKey ? "idempotency_key" : "NULL";
+      db.exec(`
+        CREATE TABLE messages (
+          id TEXT PRIMARY KEY,
+          sender_type TEXT NOT NULL CHECK(sender_type IN ('ceo','agent','system')),
+          sender_id TEXT,
+          receiver_type TEXT NOT NULL ${RECEIVER_TYPE_CHECK_FULL},
+          receiver_id TEXT,
+          content TEXT NOT NULL,
+          message_type TEXT DEFAULT 'chat' CHECK(message_type IN ('chat','task_assign','announcement','directive','report','status_update')),
+          task_id TEXT REFERENCES tasks(id),
+          idempotency_key TEXT,
+          created_at INTEGER DEFAULT (unixepoch()*1000)
+        );
+      `);
+      db.exec(`
+        INSERT INTO messages (id, sender_type, sender_id, receiver_type, receiver_id, content, message_type, task_id, idempotency_key, created_at)
+        SELECT id, sender_type, sender_id, receiver_type, receiver_id, content, message_type, task_id, ${idempotencyExpr}, created_at
+        FROM ${oldTable};
+      `);
+      db.exec(`DROP TABLE ${oldTable}`);
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      try { db.exec(`ALTER TABLE ${oldTable} RENAME TO messages`); } catch { /* */ }
+      throw e;
+    }
+  } finally {
+    db.exec("PRAGMA foreign_keys = ON");
+  }
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_type, receiver_id, created_at DESC)");
+  } catch { /* may already exist */ }
 }
 
 export function migrateLegacyTasksStatusSchema(db: Database): void {
@@ -238,4 +291,62 @@ export function ensureMessagesIdempotencySchema(db: Database): void {
     ON messages(idempotency_key)
     WHERE idempotency_key IS NOT NULL
   `);
+
+  // cursor CLI provider: extend agents.cli_provider CHECK constraint
+  // Use new table + copy + drop + rename so FKs (tasks.assigned_agent_id etc.) keep pointing to "agents"
+  const agentsSql = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='agents'").get() as { sql?: string } | undefined)?.sql ?? "";
+  if (agentsSql && !agentsSql.includes("'cursor'")) {
+    console.log("[HyperClaw] Migrating agents.cli_provider CHECK to include 'cursor'");
+    const newTable = "agents_cursor_mig_new";
+    const newColumns = [
+      "id", "name", "name_ko", "name_ja", "name_zh", "department_id", "role", "cli_provider",
+      "oauth_account_id", "api_provider_id", "api_model", "avatar_emoji", "personality", "status",
+      "current_task_id", "stats_tasks_done", "stats_xp", "sprite_number", "created_at",
+    ];
+    const defaults: Record<string, string> = {
+      name_ja: "NULL", name_zh: "NULL", avatar_emoji: "'🤖'", status: "'idle'",
+      stats_tasks_done: "0", stats_xp: "0", sprite_number: "1",
+    };
+    db.exec("PRAGMA foreign_keys = OFF");
+    try {
+      db.exec("BEGIN");
+      try {
+        db.exec(`
+          CREATE TABLE ${newTable} (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            name_ko TEXT NOT NULL,
+            name_ja TEXT,
+            name_zh TEXT,
+            department_id TEXT REFERENCES departments(id),
+            role TEXT NOT NULL CHECK(role IN ('team_leader','senior','junior','intern')),
+            cli_provider TEXT CHECK(cli_provider IN ('claude','codex','gemini','opencode','cursor','copilot','antigravity','api')),
+            oauth_account_id TEXT,
+            api_provider_id TEXT,
+            api_model TEXT,
+            avatar_emoji TEXT NOT NULL DEFAULT '🤖',
+            personality TEXT,
+            status TEXT NOT NULL DEFAULT 'idle' CHECK(status IN ('idle','working','break','offline')),
+            current_task_id TEXT,
+            stats_tasks_done INTEGER DEFAULT 0,
+            stats_xp INTEGER DEFAULT 0,
+            sprite_number INTEGER DEFAULT 1,
+            created_at INTEGER DEFAULT (unixepoch()*1000)
+          );
+        `);
+        const oldCols = (db.prepare("PRAGMA table_info(agents)").all() as Array<{ name: string }>).map((c) => c.name);
+        const oldColSet = new Set(oldCols);
+        const selectParts = newColumns.map((col) => (oldColSet.has(col) ? col : (defaults[col] ?? "NULL")));
+        db.exec(`INSERT INTO ${newTable} (${newColumns.join(", ")}) SELECT ${selectParts.join(", ")} FROM agents`);
+        db.exec("DROP TABLE agents");
+        db.exec(`ALTER TABLE ${newTable} RENAME TO agents`);
+        db.exec("COMMIT");
+      } catch (e) {
+        db.exec("ROLLBACK");
+        throw e;
+      }
+    } finally {
+      db.exec("PRAGMA foreign_keys = ON");
+    }
+  }
 }

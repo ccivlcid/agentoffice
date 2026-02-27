@@ -61,6 +61,7 @@ import {
 import {
   runMigrationsPart2,
   migrateMessagesDirectiveType,
+  migrateMessagesReceiverTypeTeamLeaders,
   migrateLegacyTasksStatusSchema,
   repairLegacyTaskForeignKeys,
   ensureMessagesIdempotencySchema,
@@ -98,6 +99,7 @@ migrateOAuthActiveAccountsTable(db);
 migrateLegacyOAuthCredentialsToAccounts(db);
 runMigrationsPart2(db);
 migrateMessagesDirectiveType(db);
+migrateMessagesReceiverTypeTeamLeaders(db);
 migrateLegacyTasksStatusSchema(db);
 repairLegacyTaskForeignKeys(db);
 ensureMessagesIdempotencySchema(db);

@@ -33,6 +33,7 @@ export interface WorkflowAgentExports {
   fetchClaudeUsage: (...args: any[]) => any;
   fetchCodexUsage: (...args: any[]) => any;
   fetchGeminiUsage: (...args: any[]) => any;
+  fetchCursorUsage: (...args: any[]) => any;
   execWithTimeout: (...args: any[]) => any;
   detectAllCli: (...args: any[]) => any;
 }

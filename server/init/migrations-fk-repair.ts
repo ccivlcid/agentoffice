@@ -30,7 +30,7 @@ export function repairLegacyTaskForeignKeys(db: Database): void {
           id TEXT PRIMARY KEY,
           sender_type TEXT NOT NULL CHECK(sender_type IN ('ceo','agent','system')),
           sender_id TEXT,
-          receiver_type TEXT NOT NULL CHECK(receiver_type IN ('agent','department','all')),
+          receiver_type TEXT NOT NULL CHECK(receiver_type IN ('agent','department','all','team_leaders')),
           receiver_id TEXT,
           content TEXT NOT NULL,
           message_type TEXT DEFAULT 'chat' CHECK(message_type IN ('chat','task_assign','announcement','directive','report','status_update')),

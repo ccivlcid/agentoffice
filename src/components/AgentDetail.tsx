@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { Agent, Task, Department, SubTask } from "../types";
 import * as api from "../api";
 import type { OAuthStatus } from "../api";
+import { useModalFocus } from "../hooks/useModalFocus";
 import AgentAvatar from "./AgentAvatar";
 import {
   useI18n,
@@ -62,6 +63,7 @@ export default function AgentDetail({
   const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const agentTasks = tasks.filter((t) => t.assigned_agent_id === agent.id);
   const subtasksByTask = useMemo(() => {
@@ -146,7 +148,7 @@ export default function AgentDetail({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[calc(100vw-1.5rem)] max-w-[480px] max-h-[85vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
+      <div ref={contentRef} className="w-[calc(100vw-1.5rem)] max-w-[480px] max-h-[85vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
         {/* Header */}
         <div
           className="relative px-6 py-5 border-b border-slate-700"

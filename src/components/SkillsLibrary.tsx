@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Agent } from "../types";
 import type { CustomSkill } from "../api";
+import { PageHeader, LoadingBlock, EmptyState } from "./ui";
 import SkillHistoryPanel from "./SkillHistoryPanel";
 import { useSkillsLibrary } from "./skills-library/useSkillsLibrary";
 import {
@@ -18,12 +19,17 @@ import SkillUploadModal from "./skills-library/SkillUploadModal";
 import ClassroomTrainingAnimation from "./skills-library/ClassroomTrainingAnimation";
 import { categorize } from "./skills-library/skillCategorize";
 import { formatInstalls } from "./skills-library/skillsLibraryHelpers";
+import McpServerList from "./skills-library/McpServerList";
+import RulesList from "./skills-library/RulesList";
+
+type LibraryTab = "skills" | "mcp" | "rules";
 
 interface SkillsLibraryProps {
   agents: Agent[];
+  initialTab?: LibraryTab;
 }
 
-export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
+export default function SkillsLibrary({ agents, initialTab = "skills" }: SkillsLibraryProps) {
   const {
     skills,
     loading,
@@ -70,6 +76,7 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
   } = useSkillsLibrary(agents);
 
   const cs = useCustomSkills();
+  const activeTab = initialTab;
   const [guideOpen, setGuideOpen] = useState(true);
   const [skillHistoryOpen, setSkillHistoryOpen] = useState(true);
 
@@ -119,47 +126,70 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
 
   const totalCount = skills.length + cs.customSkills.length;
 
-  if (loading) {
+  if (activeTab === "skills" && loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <div className="text-slate-400 text-sm">
-            {t({
-              ko: "skills.sh 데이터 로딩중...",
-              en: "Loading skills.sh data...",
-})}
-          </div>
-        </div>
+      <div className="space-y-4 max-w-7xl mx-auto">
+        <PageHeader
+          title={t({ ko: "스킬", en: "Skills" })}
+          subtitle={t({
+            ko: "AI 에이전트 스킬 검색·학습",
+            en: "Search and learn AI agent skills",
+          })}
+        />
+        <LoadingBlock
+          message={t({
+            ko: "skills.sh 데이터 로딩 중...",
+            en: "Loading skills.sh data...",
+          })}
+        />
       </div>
     );
   }
 
-  if (error && skills.length === 0) {
+  if (activeTab === "skills" && error && skills.length === 0) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center">
-          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-amber-400" aria-hidden />
-          <div className="text-slate-400 text-sm">
-            {t({
-              ko: "스킬 데이터를 불러올 수 없습니다",
-              en: "Unable to load skills data",
-})}
-          </div>
-          <div className="text-slate-500 text-xs mt-1">{error}</div>
-          <button
-            onClick={retryLoad}
-            className="mt-4 px-4 py-2 text-sm bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-all"
-          >
-            {t({ ko: "다시 시도", en: "Retry" })}
-          </button>
-        </div>
+      <div className="space-y-4 max-w-7xl mx-auto">
+        <PageHeader
+          title={t({ ko: "스킬", en: "Skills" })}
+          subtitle={t({
+            ko: "AI 에이전트 스킬 검색·학습",
+            en: "Search and learn AI agent skills",
+          })}
+        />
+        <EmptyState
+          icon={<AlertTriangle className="h-8 w-8" aria-hidden />}
+          title={t({
+            ko: "스킬 목록을 불러오지 못했어요",
+            en: "We couldn't load the skills list",
+          })}
+          description={error}
+          action={
+            <button type="button" onClick={retryLoad} className="btn-primary btn-sm">
+              {t({ ko: "다시 시도", en: "Retry" })}
+            </button>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      <PageHeader
+        title={t({
+          ko: activeTab === "mcp" ? "MCP 서버" : activeTab === "rules" ? "에이전트 룰" : "스킬",
+          en: activeTab === "mcp" ? "MCP Servers" : activeTab === "rules" ? "Agent Rules" : "Skills",
+        })}
+        subtitle={t({
+          ko: activeTab === "mcp" ? "AI 에이전트 MCP 서버 관리" : activeTab === "rules" ? "에이전트 룰 관리" : "AI 에이전트 스킬 검색·학습",
+          en: activeTab === "mcp" ? "MCP server management" : activeTab === "rules" ? "Agent rules management" : "Search and learn AI agent skills",
+        })}
+      />
+
+      {activeTab === "mcp" && <McpServerList t={t} agents={agents} localeTag={localeTag} />}
+      {activeTab === "rules" && <RulesList t={t} agents={agents} localeTag={localeTag} />}
+
+      {activeTab === "skills" && <>
       {/* 사용법 및 가이드 */}
       <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
         <button
@@ -198,20 +228,11 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
 
       <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <BookOpen width={24} height={24} className="text-blue-400 shrink-0" aria-hidden />
-              {t({
-                ko: "Agent Skills 도서관",
-                en: "Agent Skills Library",
-})}
-            </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              {t({
-                ko: "AI 에이전트 스킬 디렉토리 · skills.sh 실시간 데이터",
-                en: "AI agent skill directory · live skills.sh data",
-})}
-            </p>
+          <div className="flex items-center gap-2">
+            <BookOpen width={20} height={20} className="text-blue-400 shrink-0" aria-hidden />
+            <span className="text-sm font-semibold text-white">
+              {t({ ko: "스킬 목록", en: "Skill list" })}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
@@ -484,6 +505,7 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
           en: "Source: skills.sh · Install: npx skills add <owner/repo>",
 })}
       </div>
+      </>}
     </div>
   );
 }

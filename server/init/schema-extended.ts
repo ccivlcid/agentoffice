@@ -187,6 +187,41 @@ CREATE TABLE IF NOT EXISTS custom_skills (
 );
 CREATE INDEX IF NOT EXISTS idx_custom_skills_updated ON custom_skills(updated_at DESC);
 
+CREATE TABLE IF NOT EXISTS mcp_servers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  server_key TEXT NOT NULL UNIQUE,
+  package TEXT NOT NULL DEFAULT '',
+  command TEXT NOT NULL DEFAULT 'npx',
+  args TEXT NOT NULL DEFAULT '[]',
+  env TEXT NOT NULL DEFAULT '{}',
+  description TEXT NOT NULL DEFAULT '',
+  category TEXT DEFAULT 'other',
+  enabled INTEGER NOT NULL DEFAULT 1,
+  providers TEXT NOT NULL DEFAULT '[]',
+  source TEXT NOT NULL DEFAULT 'manual',
+  created_at INTEGER DEFAULT (unixepoch()*1000),
+  updated_at INTEGER DEFAULT (unixepoch()*1000)
+);
+CREATE INDEX IF NOT EXISTS idx_mcp_servers_updated ON mcp_servers(updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS project_rules (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL DEFAULT '',
+  category TEXT DEFAULT 'general',
+  globs TEXT NOT NULL DEFAULT '[]',
+  always_apply INTEGER NOT NULL DEFAULT 0,
+  providers TEXT NOT NULL DEFAULT '[]',
+  enabled INTEGER NOT NULL DEFAULT 1,
+  source TEXT NOT NULL DEFAULT 'manual',
+  created_at INTEGER DEFAULT (unixepoch()*1000),
+  updated_at INTEGER DEFAULT (unixepoch()*1000)
+);
+CREATE INDEX IF NOT EXISTS idx_project_rules_updated ON project_rules(updated_at DESC);
+
 CREATE TABLE IF NOT EXISTS project_agents (
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,

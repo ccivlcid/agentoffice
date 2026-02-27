@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { Task, TaskType, Department } from "../../types";
 import { useI18n } from "../../i18n";
 import { TASK_TYPE_COLORS, taskTypeLabel } from "../task-board/taskBoardHelpers";
@@ -47,8 +47,18 @@ export default function DeliverableDetail({ task, departments, onDelete }: Deliv
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<TabKey>("summary");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  /** 방문한 탭만 마운트 유지해 탭 전환 시 재렌더 비용 절감 */
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabKey>>(() => new Set(["summary"]));
   const colors = TASK_TYPE_COLORS[task.task_type] ?? TASK_TYPE_COLORS.general;
   const isPlanning = isPlanningDepartment(departments, task.department_id);
+
+  useEffect(() => {
+    setVisitedTabs((prev) => new Set([...prev, activeTab]));
+  }, [activeTab]);
+
+  useEffect(() => {
+    setVisitedTabs(new Set(["summary"]));
+  }, [task.id]);
 
   const handleDeleteClick = () => {
     if (!deleteConfirm) {
@@ -137,19 +147,31 @@ export default function DeliverableDetail({ task, departments, onDelete }: Deliv
         ))}
       </nav>
 
-      <div
-        id={`dlv-panel-${validTab}`}
-        role="tabpanel"
-        aria-labelledby={`dlv-tab-${validTab}`}
-        className="dlv-detail-content"
-      >
-        {validTab === "summary" && <DeliverableSummaryTab taskId={task.id} />}
-        {validTab === "code" && <DeliverableCodeTab taskId={task.id} />}
-        {validTab === "doc" && <DeliverableDocTab taskId={task.id} />}
-        {validTab === "test" && <DeliverableTestTab taskId={task.id} taskType={task.task_type} />}
-        {validTab === "minutes" && <DeliverableMinutesTab taskId={task.id} />}
-        {validTab === "execution" && <DeliverableLogTab taskId={task.id} />}
-        {validTab === "serverLog" && <DeliverablePreviewLogTab taskId={task.id} />}
+      <div className="dlv-detail-content flex flex-col min-h-0">
+        {tabs.map((tab) => {
+          if (!visitedTabs.has(tab.key)) return null;
+          const isActive = validTab === tab.key;
+          return (
+            <div
+              key={tab.key}
+              id={`dlv-panel-${tab.key}`}
+              role="tabpanel"
+              aria-labelledby={`dlv-tab-${tab.key}`}
+              aria-hidden={!isActive}
+              hidden={!isActive}
+              className="h-full overflow-auto min-h-0"
+              style={{ display: isActive ? "block" : "none" }}
+            >
+              {tab.key === "summary" && <DeliverableSummaryTab taskId={task.id} />}
+              {tab.key === "code" && <DeliverableCodeTab taskId={task.id} />}
+              {tab.key === "doc" && <DeliverableDocTab taskId={task.id} />}
+              {tab.key === "test" && <DeliverableTestTab taskId={task.id} taskType={task.task_type} />}
+              {tab.key === "minutes" && <DeliverableMinutesTab taskId={task.id} />}
+              {tab.key === "execution" && <DeliverableLogTab taskId={task.id} />}
+              {tab.key === "serverLog" && <DeliverablePreviewLogTab taskId={task.id} />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

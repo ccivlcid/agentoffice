@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { DatabaseSync } from "node:sqlite";
 
 const GEMINI_OAUTH_CLIENT_ID =
   process.env.GEMINI_OAUTH_CLIENT_ID ?? process.env.OAUTH_GOOGLE_CLIENT_ID ?? "";
@@ -261,6 +262,92 @@ export async function fetchGeminiUsage(): Promise<{ windows: any[]; error: strin
           resetsAt: b.resetTime ?? null,
         });
       }
+    }
+    return { windows, error: null };
+  } catch {
+    return { windows: [], error: "unavailable" };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cursor usage
+// ---------------------------------------------------------------------------
+
+export function readCursorAccessToken(): { token: string; userId: string } | null {
+  let vscdbPath: string;
+  if (process.platform === "win32") {
+    vscdbPath = path.join(process.env.APPDATA || "", "Cursor", "User", "globalStorage", "state.vscdb");
+  } else if (process.platform === "darwin") {
+    vscdbPath = path.join(os.homedir(), "Library", "Application Support", "Cursor", "User", "globalStorage", "state.vscdb");
+  } else {
+    vscdbPath = path.join(os.homedir(), ".config", "Cursor", "User", "globalStorage", "state.vscdb");
+  }
+  if (!fs.existsSync(vscdbPath)) return null;
+
+  try {
+    const db = new DatabaseSync(vscdbPath, { readOnly: true });
+    const row = db.prepare("SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'").get() as { value: string } | undefined;
+    db.close();
+    if (!row?.value) return null;
+
+    const token = row.value;
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+    const userId = payload.sub ?? "";
+    if (!userId) return null;
+    return { token, userId };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCursorUsage(): Promise<{ windows: any[]; error: string | null }> {
+  const creds = readCursorAccessToken();
+  if (!creds) return { windows: [], error: "unauthenticated" };
+
+  const cookieValue = `${creds.userId}::${creds.token}`;
+  try {
+    const resp = await fetch(`https://cursor.com/api/usage?user=${encodeURIComponent(creds.userId)}`, {
+      headers: {
+        "Cookie": `WorkosCursorSessionToken=${encodeURIComponent(cookieValue)}`,
+        "Accept": "application/json",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!resp.ok) return { windows: [], error: `http_${resp.status}` };
+
+    const data = await resp.json() as Record<string, any>;
+
+    // Aggregate premium model usage into a single window
+    let totalUsed = 0;
+    let maxAllowed = 0;
+    let startOfMonth: string | null = null;
+    for (const [, modelData] of Object.entries(data)) {
+      if (modelData && typeof modelData === "object" && "numRequests" in modelData) {
+        totalUsed += modelData.numRequests ?? 0;
+        if (modelData.maxRequestUsage && modelData.maxRequestUsage > maxAllowed) {
+          maxAllowed = modelData.maxRequestUsage;
+        }
+        if (!startOfMonth && modelData.startOfMonth) {
+          startOfMonth = modelData.startOfMonth;
+        }
+      }
+    }
+
+    const windows: any[] = [];
+    if (maxAllowed > 0) {
+      windows.push({
+        label: `Premium (${totalUsed}/${maxAllowed})`,
+        utilization: Math.round((totalUsed / maxAllowed) * 100) / 100,
+        resetsAt: startOfMonth ?? null,
+      });
+    } else if (totalUsed > 0) {
+      windows.push({
+        label: `Requests: ${totalUsed}`,
+        utilization: 0,
+        resetsAt: startOfMonth ?? null,
+      });
     }
     return { windows, error: null };
   } catch {

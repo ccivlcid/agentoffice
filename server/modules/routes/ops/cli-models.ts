@@ -115,6 +115,13 @@ export function registerOpsCliModels(ctx: RuntimeContext): void {
         "claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5", "claude-haiku-4-5",
       ].map(toModelInfo),
       gemini: fetchGeminiModels(),
+      cursor: [
+        "auto",
+        "gpt-5.2", "gpt-5.3-codex",
+        "claude-opus-4-6", "claude-sonnet-4-6", "claude-sonnet-4-5",
+        "sonnet-4.5-thinking",
+        "gemini-2.5-pro",
+      ].map(toModelInfo),
       opencode: [],
     };
 

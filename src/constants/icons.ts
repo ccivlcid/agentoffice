@@ -73,6 +73,9 @@ import {
   Briefcase,
   Gamepad2,
   Cpu,
+  Database,
+  Globe,
+  HardDrive,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -190,6 +193,27 @@ export const MISC_ICONS = {
   monitor: Monitor,
   fileText: FileText,
 } as const;
+
+/** MCP 서버 카테고리 아이콘 */
+export const MCP_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  All: Plug,
+  filesystem: HardDrive,
+  database: Database,
+  api: Globe,
+  "dev-tools": Wrench,
+  registry: Package,
+  other: Package,
+};
+
+/** 에이전트 룰 카테고리 아이콘 */
+export const RULE_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  All: FileText,
+  general: FileText,
+  coding: Code,
+  architecture: Landmark,
+  testing: FlaskConical,
+  style: Palette,
+};
 
 export type ViewIconKey = keyof typeof VIEW_ICONS;
 export type ActionIconKey = keyof typeof ACTION_ICONS;

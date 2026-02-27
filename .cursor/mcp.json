@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ai.autoblocks/ctxl-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ctxl-mcp"
+      ]
+    }
+  }
+}

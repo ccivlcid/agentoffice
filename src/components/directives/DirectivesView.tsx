@@ -1,6 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useLayoutEffect } from "react";
 import type { Task, Agent, Department, SubTask } from "../../types";
 import { useI18n } from "../../i18n";
+import { PageHeader, EmptyState, ViewGuide } from "../ui";
+
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 import DirectivesList from "./DirectivesList";
 import DirectiveForm from "./DirectiveForm";
 import DirectiveDetail from "./DirectiveDetail";
@@ -42,17 +45,39 @@ export default function DirectivesView(props: DirectivesViewProps) {
   const { t } = useI18n();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const prevFocusRef = useRef<HTMLElement | null>(null);
 
   const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null;
 
+  useLayoutEffect(() => {
+    if (rightPanel === "none" || !panelRef.current) return;
+    const first = panelRef.current.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    first?.focus();
+  }, [rightPanel]);
+
+  useLayoutEffect(() => {
+    if (rightPanel === "none" && prevFocusRef.current) {
+      prevFocusRef.current.focus();
+      prevFocusRef.current = null;
+    }
+  }, [rightPanel]);
+
   const handleSelectTask = useCallback((id: string) => {
+    prevFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectedTaskId(id);
     setRightPanel("detail");
   }, []);
 
   const handleNewDirective = useCallback(() => {
+    prevFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectedTaskId(null);
     setRightPanel("form");
+  }, []);
+
+  const closePanel = useCallback(() => {
+    setRightPanel("none");
+    setSelectedTaskId(null);
   }, []);
 
   const handleQuickDirective = useCallback(async (title: string) => {
@@ -71,6 +96,7 @@ export default function DirectivesView(props: DirectivesViewProps) {
     async (id: string) => {
       try {
         await onDeleteTask(id);
+        prevFocusRef.current = null;
         setSelectedTaskId(null);
         setRightPanel("none");
       } catch (e) {
@@ -82,27 +108,49 @@ export default function DirectivesView(props: DirectivesViewProps) {
 
   return (
     <div className="flex flex-col gap-3 h-[calc(100dvh-120px)]">
-      {/* Quick directive bar */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <QuickDirectiveBar onSubmit={handleQuickDirective} />
-        </div>
-        <button
-          onClick={handleNewDirective}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0"
-        >
-          <Plus width={14} height={14} />
-          {t({ ko: "새 지시", en: "New" })}
-        </button>
-      </div>
+      <PageHeader
+        title={t({ ko: "업무지시", en: "Directives" })}
+        subtitle={t({
+          ko: "지시를 생성하고 진행 상황을 추적하세요.",
+          en: "Create directives and track progress.",
+        })}
+        actions={
+          <>
+            <div className="flex-1 min-w-0 max-w-md">
+              <QuickDirectiveBar onSubmit={handleQuickDirective} />
+            </div>
+            <button
+              type="button"
+              onClick={handleNewDirective}
+              className="btn-primary btn-sm shrink-0"
+            >
+              <Plus width={14} height={14} />
+              {t({ ko: "새 지시", en: "New" })}
+            </button>
+          </>
+        }
+      />
 
-      {/* Master-detail layout */}
-      <div className="flex-1 flex gap-3 min-h-0">
-        {/* Left: list (hidden on mobile when right panel is open) */}
-        <div
-          className={`${rightPanel !== "none" ? "hidden md:flex" : "flex"} w-full md:w-[340px] lg:w-[380px] shrink-0 rounded-lg overflow-hidden flex-col`}
-          style={{ background: "var(--th-bg-panel)", border: "1px solid var(--th-border)" }}
-        >
+      <ViewGuide
+        title={t({ ko: "이 화면은 이렇게 쓰세요", en: "How to use this screen" })}
+        defaultOpen={false}
+      >
+        <p>
+          {t({
+            ko: "업무지시는 새 지시를 만들고, 진행 중인 지시를 추적하는 뷰입니다.",
+            en: "Directives let you create new directives and track progress on active ones.",
+          })}
+        </p>
+        <ul className="list-disc list-inside space-y-1" style={{ color: "var(--th-text-muted)" }}>
+          <li>{t({ ko: "상단 입력창에 짧은 문장을 넣고 전송하면 새 지시(태스크)가 생성됩니다.", en: "Type a short phrase in the bar and submit to create a new directive (task)." })}</li>
+          <li>{t({ ko: "왼쪽 목록에서 지시를 선택하면 오른쪽에서 상세·실행·터미널·회의록을 볼 수 있습니다.", en: "Select a directive from the list to view detail, run, terminal, and meeting minutes." })}</li>
+        </ul>
+      </ViewGuide>
+
+      {/* Master-detail layout (모바일: 목록 + 딤드 + 드로어) */}
+      <div className="flex-1 flex gap-3 min-h-0 relative">
+        {/* Left: list (데스크톱에서는 패널 열려도 항상 표시, 오른쪽에 상세/폼) */}
+        <div className="card flex flex-col w-full md:w-[340px] lg:w-[380px] shrink-0">
           <DirectivesList
             tasks={tasks}
             agents={agents}
@@ -112,17 +160,28 @@ export default function DirectivesView(props: DirectivesViewProps) {
           />
         </div>
 
-        {/* Right: detail or form (full-width on mobile when open) */}
+        {/* Overlay: 모바일에서 패널 열렸을 때 목록 위 딤드 */}
+        {rightPanel !== "none" && (
+          <button
+            type="button"
+            className="master-detail-drawer-overlay md:hidden"
+            onClick={closePanel}
+            aria-label={t({ ko: "패널 닫기", en: "Close panel" })}
+          />
+        )}
+
+        {/* Right: detail or form (모바일 드로어, md 이상 2열) */}
         <div
-          className={`${rightPanel !== "none" ? "flex" : "hidden md:flex"} flex-1 rounded-lg overflow-hidden flex-col`}
-          style={{ background: "var(--th-bg-panel)", border: "1px solid var(--th-border)" }}
+          ref={panelRef}
+          className={`card card--accent master-detail-drawer ${rightPanel !== "none" ? "flex" : "hidden md:flex"} flex-1 flex-col`}
         >
           {rightPanel === "form" && (
             <div className="flex flex-col h-full">
               <button
-                onClick={() => setRightPanel("none")}
+                onClick={closePanel}
                 className="md:hidden flex items-center gap-1 px-3 py-2 text-xs"
                 style={{ color: "var(--th-text-accent)", borderBottom: "1px solid var(--th-border)" }}
+                aria-label={t({ ko: "목록으로", en: "Back" })}
               >
                 &larr; {t({ ko: "목록으로", en: "Back" })}
               </button>
@@ -130,19 +189,38 @@ export default function DirectivesView(props: DirectivesViewProps) {
                 agents={agents}
                 departments={departments}
                 onSubmit={onCreateTask}
-                onCancel={() => setRightPanel("none")}
+                onCancel={closePanel}
               />
             </div>
           )}
           {rightPanel === "detail" && selectedTask && (
             <div className="flex flex-col h-full">
               <button
-                onClick={() => { setRightPanel("none"); setSelectedTaskId(null); }}
+                onClick={closePanel}
                 className="md:hidden flex items-center gap-1 px-3 py-2 text-xs"
                 style={{ color: "var(--th-text-accent)", borderBottom: "1px solid var(--th-border)" }}
+                aria-label={t({ ko: "목록으로", en: "Back" })}
               >
                 &larr; {t({ ko: "목록으로", en: "Back" })}
               </button>
+              <nav
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs shrink-0"
+                style={{ borderBottom: "1px solid var(--th-border)", color: "var(--th-text-muted)" }}
+                aria-label={t({ ko: "경로", en: "Breadcrumb" })}
+              >
+                <button
+                  type="button"
+                  onClick={closePanel}
+                  className="hover:underline truncate max-w-[120px]"
+                  style={{ color: "var(--th-text-accent)" }}
+                >
+                  {t({ ko: "업무지시", en: "Directives" })}
+                </button>
+                <span aria-hidden>/</span>
+                <span className="truncate max-w-[200px]" title={selectedTask.title}>
+                  {selectedTask.title}
+                </span>
+              </nav>
               <DirectiveDetail
                 task={selectedTask}
                 agents={agents}
@@ -162,17 +240,10 @@ export default function DirectivesView(props: DirectivesViewProps) {
             </div>
           )}
           {rightPanel === "none" && (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ background: "var(--th-bg-surface)", color: "var(--th-text-muted)" }}
-              >
-                <Send width={24} height={24} />
-              </div>
-              <p className="text-xs" style={{ color: "var(--th-text-muted)" }}>
-                {t({ ko: "업무지시를 선택하거나 새로 생성하세요.", en: "Select or create a directive." })}
-              </p>
-            </div>
+            <EmptyState
+              icon={<Send width={28} height={28} />}
+              title={t({ ko: "업무지시를 선택하거나 새로 생성하세요.", en: "Select or create a directive." })}
+            />
           )}
         </div>
       </div>

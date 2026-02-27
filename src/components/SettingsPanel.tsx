@@ -146,22 +146,37 @@ export default function SettingsPanel({ settings, cliStatus, onSave, onRefreshCl
     { key: "gateway", label: t({ ko: "채널 메시지", en: "Channel" }), icon: Radio },
   ];
 
+  const currentTabLabel = tabs.find((item) => item.key === tab)?.label ?? "";
+
   return (
     <SettingsPanelProvider value={contextValue}>
       <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
+        <nav
+          className="text-xs sm:text-sm mb-1"
+          style={{ color: "var(--th-text-muted)" }}
+          aria-label={t({ ko: "경로", en: "Breadcrumb" })}
+        >
+          <span>{t({ ko: "설정", en: "Settings" })}</span>
+          <span aria-hidden className="mx-1.5">/</span>
+          <span style={{ color: "var(--th-text-secondary)" }}>{currentTabLabel}</span>
+        </nav>
         <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: "var(--th-text-heading)" }}>
           <Settings width={20} height={20} className="shrink-0" aria-hidden />
           {t({ ko: "설정", en: "Settings" })}
         </h2>
 
-        <div className="flex flex-wrap gap-1 border-b border-slate-700/50 pb-1">
+        <div className="flex flex-wrap gap-1 border-b pb-1" style={{ borderColor: "var(--th-border)" }}>
           {tabs.map((tabItem) => (
             <button
               key={tabItem.key}
               onClick={() => setTab(tabItem.key)}
-              className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:py-2.5 sm:text-sm ${
-                tab === tabItem.key ? "text-blue-400 border-b-2 border-blue-400" : "text-slate-400 hover:text-slate-200"
+              className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:py-2.5 sm:text-sm hover:opacity-90 ${
+                tab === tabItem.key ? "border-b-2" : ""
               }`}
+            style={{
+              color: tab === tabItem.key ? "var(--th-text-accent)" : "var(--th-text-muted)",
+              borderBottomColor: tab === tabItem.key ? "var(--th-focus-ring)" : "transparent",
+            }}
             >
               <tabItem.icon width={16} height={16} className="shrink-0" aria-hidden />
               <span>{tabItem.label}</span>

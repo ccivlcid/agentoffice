@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { Task, Agent, Department } from "../../types";
 import { useI18n } from "../../i18n";
+import { EmptyState } from "../ui";
 import DeliverableCard from "./DeliverableCard";
 import { Search, X, Package, Send } from "lucide-react";
 
@@ -150,22 +151,27 @@ export default function DeliverablesList({
 
       <div className="dlv-list-body">
         {completedTasks.length === 0 ? (
-          <div className="dlv-empty-inline">
-            <div className="dlv-empty-inline-icon">
-              <Package width={24} height={24} strokeWidth={1.5} />
-            </div>
-            <p className="dlv-empty-inline-text">
-              {search || filterDept || period !== "all"
+          <EmptyState
+            icon={<Package width={24} height={24} strokeWidth={1.5} />}
+            title={
+              search || filterDept || period !== "all"
                 ? t({ ko: "조건에 맞는 결과가 없습니다", en: "No results match your filters" })
-                : t({ ko: "완료된 결과물이 없습니다", en: "No completed deliverables yet" })}
-            </p>
-            {!search && !filterDept && period === "all" && onNavigateToDirectives && (
-              <button type="button" onClick={onNavigateToDirectives} className="dlv-empty-inline-cta">
-                <Send width={12} height={12} />
-                {t({ ko: "업무지시에서 작업하기", en: "Create in Directives" })}
-              </button>
-            )}
-          </div>
+                : t({ ko: "완료된 결과물이 없습니다", en: "No completed deliverables yet" })
+            }
+            action={
+              !search && !filterDept && period === "all" && onNavigateToDirectives ? (
+                <button
+                  type="button"
+                  onClick={onNavigateToDirectives}
+                  className="btn-primary btn-sm"
+                >
+                  <Send width={12} height={12} />
+                  {t({ ko: "업무지시에서 작업하기", en: "Create in Directives" })}
+                </button>
+              ) : undefined
+            }
+            className="py-6"
+          />
         ) : (
           <ul className="dlv-card-list" role="list">
             {completedTasks.map((task) => (

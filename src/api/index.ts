@@ -145,6 +145,32 @@ export {
 } from './custom-skills';
 
 export {
+  getMcpServers,
+  createMcpServer,
+  updateMcpServer,
+  deleteMcpServer,
+  toggleMcpServer,
+  syncMcpServers,
+  getMcpPresets,
+  getMcpRegistry,
+  type McpServer,
+  type McpPreset,
+  type McpRegistryEntry,
+} from './mcp-servers';
+
+export {
+  getRules,
+  createRule,
+  updateRule,
+  deleteRule,
+  toggleRule,
+  syncRules,
+  getRulePresets,
+  type ProjectRule,
+  type RulePreset,
+} from './rules';
+
+export {
   getGatewayTargets,
   sendGatewayMessage,
   type GatewayTarget,

@@ -8,7 +8,7 @@ import type { RuntimeContext } from "../../../types/runtime-context.ts";
 type CliUsageEntry = { windows: unknown[]; error?: string };
 
 export function registerOpsCliUsage(ctx: RuntimeContext): { refreshCliUsageData: () => Promise<Record<string, CliUsageEntry>> } {
-  const { app, db, nowMs, broadcast, CLI_TOOLS, fetchClaudeUsage, fetchCodexUsage, fetchGeminiUsage } = ctx;
+  const { app, db, nowMs, broadcast, CLI_TOOLS, fetchClaudeUsage, fetchCodexUsage, fetchGeminiUsage, fetchCursorUsage } = ctx;
 
   function readCliUsageFromDb(): Record<string, CliUsageEntry> {
     const rows = db.prepare("SELECT provider, data_json FROM cli_usage_cache").all() as Array<{ provider: string; data_json: string }>;
@@ -20,16 +20,17 @@ export function registerOpsCliUsage(ctx: RuntimeContext): { refreshCliUsageData:
   }
 
   async function refreshCliUsageData(): Promise<Record<string, CliUsageEntry>> {
-    const providers = ["claude", "codex", "gemini", "copilot", "antigravity"];
+    const providers = ["claude", "codex", "gemini", "cursor", "copilot", "antigravity"];
     const usage: Record<string, CliUsageEntry> = {};
     const fetchMap: Record<string, () => Promise<CliUsageEntry>> = {
       claude: fetchClaudeUsage,
       codex: fetchCodexUsage,
       gemini: fetchGeminiUsage,
+      cursor: fetchCursorUsage,
     };
 
     const fetches = providers.map(async (p) => {
-      const tool = CLI_TOOLS.find((t: any) => t.name === p);
+      const tool = CLI_TOOLS.find((t: any) => t.name === p || (t as any).displayName === p);
       if (!tool) {
         usage[p] = { windows: [], error: "not_implemented" };
         return;

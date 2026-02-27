@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Agent } from '../types';
 import type { ActiveAgentInfo } from '../api';
 import type { UiLanguage } from '../i18n';
 import { pickLang } from '../i18n';
 import { getActiveAgents, getCliProcesses, killCliProcess, stopTask } from '../api';
+import { useModalFocus } from '../hooks/useModalFocus';
 import AgentStatusPanelCliList from './AgentStatusPanelCliList';
 import AgentStatusPanelAgentList from './AgentStatusPanelAgentList';
 
@@ -15,6 +16,8 @@ interface AgentStatusPanelProps {
 
 export default function AgentStatusPanel({ agents, uiLanguage, onClose }: AgentStatusPanelProps) {
   const t = (text: { ko: string; en: string; ja?: string; zh?: string }) => pickLang(uiLanguage, text);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useModalFocus(true, contentRef);
   const [activeAgents, setActiveAgents] = useState<ActiveAgentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [killing, setKilling] = useState<Set<string>>(new Set());
@@ -101,6 +104,7 @@ export default function AgentStatusPanel({ agents, uiLanguage, onClose }: AgentS
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={contentRef}
         className={`relative mx-4 w-full rounded-2xl border border-blue-500/30 bg-slate-900 shadow-2xl shadow-blue-500/10 ${
           inspectorMode ? 'max-w-3xl' : 'max-w-lg'
         }`}

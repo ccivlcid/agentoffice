@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import type { CompanyStats, Agent, Task } from "../types";
+import { ViewGuide } from "./ui";
 import { useI18n, useNow, DEPT_COLORS, groupAgentsByGrade } from "./dashboard/dashboardHelpers";
 import DashboardGameHeader from "./dashboard/DashboardGameHeader";
 import DashboardHudStats, { buildHudStats } from "./dashboard/DashboardHudStats";
@@ -183,7 +184,7 @@ export default function Dashboard({
 
   return (
     <section
-      className="relative isolate space-y-4"
+      className="relative isolate space-y-4 max-w-7xl mx-auto"
       style={{ color: "var(--th-text-primary)" }}
       aria-label={t({ ko: "대시보드", en: "Dashboard" })}
     >
@@ -204,6 +205,22 @@ export default function Dashboard({
         onPrimaryCtaClick={onPrimaryCtaClick}
         t={t}
       />
+
+      <ViewGuide
+        title={t({ ko: "이 화면은 이렇게 쓰세요", en: "How to use this screen" })}
+        defaultOpen={false}
+      >
+        <p>
+          {t({
+            ko: "대시보드는 전사 지표, 에이전트 성과, 부서별 진행률, 최근 미션 로그를 한눈에 보는 뷰입니다.",
+            en: "Dashboard shows company metrics, agent performance, department progress, and recent mission log at a glance.",
+          })}
+        </p>
+        <ul className="list-disc list-inside space-y-1" style={{ color: "var(--th-text-muted)" }}>
+          <li>{t({ ko: "「미션 시작」으로 업무 관리 뷰로 이동해 새 태스크를 만들 수 있습니다.", en: "Use \"Start Mission\" to go to Tasks and create new tasks." })}</li>
+          <li>{t({ ko: "각 블록은 접기/펼치기가 가능하며, 상태가 저장됩니다.", en: "Each block can be collapsed; state is saved." })}</li>
+        </ul>
+      </ViewGuide>
 
       <DashboardHudStats
         hudStats={hudStats}

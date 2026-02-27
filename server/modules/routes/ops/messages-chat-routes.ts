@@ -246,6 +246,21 @@ export function registerMessageAndAnnouncementRoutes(ctx: {
     if (!(await recordAcceptedIngressAuditOrRollback(res, { endpoint: "/api/announcements/team-leaders", req, body, idempotencyKey, outcome: "accepted", statusCode: 200, detail: "created" }, msg.id))) return;
     broadcast("announcement", msg);
     scheduleTeamLeaderReplies(content);
+    // 팀장 회의 채팅에 입력된 프롬프트를 부서별로 실제 AI가 실행하도록 위임(태스크 생성 후 CLI 에이전트 실행)
+    const teamLeaders = db.prepare(
+      "SELECT * FROM agents WHERE role = 'team_leader' AND status != 'offline'"
+    ).all() as AgentRow[];
+    const prompt = content.trim() || "";
+    if (prompt.length > 0) {
+      let delayMs = 5000;
+      for (const leader of teamLeaders) {
+        const d = delayMs + Math.random() * 2000;
+        setTimeout(() => {
+          handleTaskDelegation(leader, prompt, "team_leaders_meeting", { skipPlannedMeeting: true });
+        }, d);
+        delayMs += 3000 + Math.random() * 2000;
+      }
+    }
     res.json({ ok: true, message: msg });
   });
 }

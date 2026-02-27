@@ -15,6 +15,7 @@ export const CLI_PATH_FALLBACK_DIRS = process.platform === "win32"
       path.join(process.env.ProgramFiles || "C:\\Program Files", "nodejs"),
       path.join(process.env.LOCALAPPDATA || "", "Programs", "nodejs"),
       path.join(process.env.APPDATA || "", "npm"),
+      path.join(process.env.LOCALAPPDATA || "", "cursor-agent"),
     ].filter(Boolean)
   : [
       "/opt/homebrew/bin",
@@ -71,6 +72,15 @@ export function buildAgentArgs(provider: string, model?: string, reasoningLevel?
       const args = ["opencode", "run"];
       if (model) args.push("-m", model);
       args.push("--format", "json");
+      return args;
+    }
+    case "cursor": {
+      const args = [
+        "agent",
+        "--force",
+        "--output-format", "json",
+      ];
+      if (model && model !== "auto") args.push("--model", model);
       return args;
     }
     case "copilot":

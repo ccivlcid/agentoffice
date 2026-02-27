@@ -11,7 +11,7 @@
     "prestart": "node scripts/auto-apply-v1.0.5.mjs",
     "prestart:tailscale": "node scripts/auto-apply-v1.0.5.mjs",
     "dev": "concurrently -n web,api -c cyan,magenta \"cross-env VITE_DEV=1 vite --host 0.0.0.0 --port 8800\" \"cross-env VITE_DEV=1 HOST=0.0.0.0 nodemon --watch server --ext ts --exec tsx server/index.ts\"",
-    "dev:local": "concurrently -n web,api -c cyan,magenta \"cross-env VITE_DEV=1 vite --host 127.0.0.1 --port 8800\" \"cross-env VITE_DEV=1 HOST=127.0.0.1 nodemon --watch server --ext ts --exec tsx server/index.ts\"",
+    "dev:local": "concurrently -n web,api -c cyan,magenta \"node scripts/wait-for-api.mjs cross-env VITE_DEV=1 vite --host 127.0.0.1 --port 8800\" \"cross-env VITE_DEV=1 HOST=127.0.0.1 nodemon --watch server --ext ts --exec tsx server/index.ts\"",
     "dev:tailscale": "concurrently -n web,api -c cyan,magenta \"cross-env VITE_DEV=1 vite --host 0.0.0.0 --port 8800\" \"cross-env VITE_DEV=1 HOST=0.0.0.0 nodemon --watch server --ext ts --exec tsx server/index.ts\"",
     "start": "tsx server/index.ts",
     "start:tailscale": "cross-env HOST=0.0.0.0 tsx server/index.ts",

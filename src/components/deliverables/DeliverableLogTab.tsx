@@ -36,7 +36,7 @@ export default function DeliverableLogTab({ taskId }: DeliverableLogTabProps) {
     return (
       <div className="dlv-empty">
         <div className="dlv-empty-icon"><Terminal width={20} height={20} /></div>
-        <p className="dlv-empty-text">{t({ ko: "업무 실행 로그가 없습니다", en: "No execution logs" })}</p>
+        <p className="dlv-empty-text">{t({ ko: "아직 실행 기록이 없어요", en: "No execution logs yet" })}</p>
       </div>
     );
   }

@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Agent, Department } from '../types';
 import { useI18n } from '../i18n';
 import * as api from '../api';
+import { useModalFocus } from '../hooks/useModalFocus';
 import { AVATAR_ICONS } from '../constants/icons';
 import { X } from 'lucide-react';
 
@@ -118,7 +119,7 @@ function AgentFormModal({ agent, departments, onSave, onCancel }: {
           <div className="grid grid-cols-3 gap-3">
             <label className="block"><span className="text-xs text-slate-400">{t({ ko: 'CLI', en: 'CLI Provider' })}</span>
               <select className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={cliProvider} onChange={e => setCliProvider(e.target.value as typeof cliProvider)}>
-                {(['claude','codex','gemini','opencode','copilot','antigravity','api'] as const).map(p => <option key={p} value={p}>{p}</option>)}
+                {(['claude','codex','cursor','gemini','opencode','copilot','antigravity','api'] as const).map(p => <option key={p} value={p}>{p}</option>)}
               </select></label>
             <label className="block"><span className="text-xs text-slate-400">{t({ ko: '캐릭터', en: 'Character' })}</span>
               <div className="mt-1 flex flex-wrap gap-1.5">
@@ -236,6 +237,8 @@ export default function AgentManagerModal({
   initialOpenHireFromBreakRoom, onConsumedInitialHire,
 }: Props) {
   const { t } = useI18n();
+  const contentRef = useRef<HTMLDivElement>(null);
+  useModalFocus(true, contentRef);
   const [tab, setTab] = useState<Tab>('agents');
   const [agentForm, setAgentForm] = useState<Partial<Agent> | null>(null);
   const [deptForm, setDeptForm] = useState<Partial<Department> | null>(null);
@@ -305,7 +308,7 @@ export default function AgentManagerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="flex h-[80vh] w-[min(900px,95vw)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+      <div ref={contentRef} className="flex h-[80vh] w-[min(900px,95vw)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
         {/* Header + Tabs */}
         <div className="flex items-center gap-4 border-b border-slate-700 px-5 py-3">
           <h2 className="text-sm font-bold text-white">{t({ ko: '에이전트 매니저', en: 'Agent Manager' })}</h2>

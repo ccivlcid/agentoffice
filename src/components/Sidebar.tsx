@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Department, Agent, CompanySettings } from "../types";
 import { useI18n } from "../i18n";
-import { Building2, Send, BookOpen, LayoutDashboard, ClipboardList, FolderCheck, Settings } from "lucide-react";
+import { Building2, Send, BookOpen, LayoutDashboard, ClipboardList, FolderCheck, Settings, Plug, FileText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "skills" | "settings";
+const SIDEBAR_COLLAPSED_KEY = "haifer_sidebar_collapsed";
+
+function getStoredCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "skills" | "skills-mcp" | "skills-rules" | "settings";
 
 interface SidebarProps {
   currentView: View;
@@ -15,14 +26,21 @@ interface SidebarProps {
   connected: boolean;
 }
 
-const NAV_ITEMS: { view: View; icon: LucideIcon }[] = [
+const NAV_MAIN: { view: View; icon: LucideIcon }[] = [
   { view: "office", icon: Building2 },
-  { view: "skills", icon: BookOpen },
   { view: "dashboard", icon: LayoutDashboard },
+];
+
+const NAV_LIBRARY: { view: View; icon: LucideIcon }[] = [
+  { view: "skills", icon: BookOpen },
+  { view: "skills-mcp", icon: Plug },
+  { view: "skills-rules", icon: FileText },
+];
+
+const NAV_WORK: { view: View; icon: LucideIcon }[] = [
   { view: "directives", icon: Send },
   { view: "tasks", icon: ClipboardList },
   { view: "deliverables", icon: FolderCheck },
-  { view: "settings", icon: Settings },
 ];
 
 export default function Sidebar({
@@ -33,7 +51,21 @@ export default function Sidebar({
   settings,
   connected,
 }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsedState] = useState(false);
+  useEffect(() => {
+    setCollapsedState(getStoredCollapsed());
+  }, []);
+  const setCollapsed = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setCollapsedState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
   const { t, locale } = useI18n();
   const workingCount = agents.filter((a) => a.status === "working").length;
   const totalAgents = agents.length;
@@ -44,9 +76,11 @@ export default function Sidebar({
 
   const navLabels: Record<View, string> = {
     office: tr("오피스", "Office", "オフィス", "办公室"),
-    directives: tr("업무지시", "Directives", "業務指示", "工作指示"),
-    skills: tr("도서관", "Library", "ライブラリ", "文档库"),
     dashboard: tr("대시보드", "Dashboard", "ダッシュボード", "仪表盘"),
+    skills: tr("스킬", "Skills", "スキル", "技能"),
+    "skills-mcp": tr("MCP 서버", "MCP Servers", "MCPサーバー", "MCP服务器"),
+    "skills-rules": tr("에이전트 룰", "Agent Rules", "エージェントルール", "代理规则"),
+    directives: tr("업무지시", "Directives", "業務指示", "工作指示"),
     tasks: tr("업무 관리", "Tasks", "タスク管理", "任务管理"),
     deliverables: tr("결과물", "Deliverables", "成果物", "交付物"),
     settings: tr("설정", "Settings", "設定", "设置"),
@@ -83,8 +117,8 @@ export default function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 space-y-0.5 px-2">
-        {NAV_ITEMS.map((item) => (
+      <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
+        {NAV_MAIN.map((item) => (
           <button
             key={item.view}
             onClick={() => onChangeView(item.view)}
@@ -98,6 +132,62 @@ export default function Sidebar({
             {!collapsed && <span>{navLabels[item.view]}</span>}
           </button>
         ))}
+        {!collapsed && (
+          <div
+            className="px-2 pt-3 pb-1 text-[10px] uppercase font-semibold tracking-wider"
+            style={{ color: "var(--th-text-muted)" }}
+          >
+            {tr("도서관", "Library", "ライブラリ", "文档库")}
+          </div>
+        )}
+        {NAV_LIBRARY.map((item) => (
+          <button
+            key={item.view}
+            onClick={() => onChangeView(item.view)}
+            className={`sidebar-nav-item ${
+              currentView === item.view
+                ? "active font-semibold shadow-sm shadow-blue-500/10"
+                : ""
+            }`}
+          >
+            <item.icon width={18} height={18} className="shrink-0" />
+            {!collapsed && <span>{navLabels[item.view]}</span>}
+          </button>
+        ))}
+        {!collapsed && (
+          <div
+            className="px-2 pt-3 pb-1 text-[10px] uppercase font-semibold tracking-wider"
+            style={{ color: "var(--th-text-muted)" }}
+          >
+            {tr("업무", "Work", "業務", "工作")}
+          </div>
+        )}
+        {NAV_WORK.map((item) => (
+          <button
+            key={item.view}
+            onClick={() => onChangeView(item.view)}
+            className={`sidebar-nav-item ${
+              currentView === item.view
+                ? "active font-semibold shadow-sm shadow-blue-500/10"
+                : ""
+            }`}
+          >
+            <item.icon width={18} height={18} className="shrink-0" />
+            {!collapsed && <span>{navLabels[item.view]}</span>}
+          </button>
+        ))}
+        <div className="pt-2 mt-1" style={{ borderTop: "1px solid var(--th-border)" }} />
+        <button
+          onClick={() => onChangeView("settings")}
+          className={`sidebar-nav-item w-full ${
+            currentView === "settings"
+              ? "active font-semibold shadow-sm shadow-blue-500/10"
+              : ""
+          }`}
+        >
+          <Settings width={18} height={18} className="shrink-0" />
+          {!collapsed && <span>{navLabels.settings}</span>}
+        </button>
       </nav>
 
       {/* Department quick stats */}

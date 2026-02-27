@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UiLanguage } from '../i18n';
 import { pickLang } from '../i18n';
 import type { Agent } from '../types';
+import { useModalFocus } from '../hooks/useModalFocus';
 import { buildSpriteMap } from './AgentAvatar';
 import type { DecisionInboxItem } from './chat/decision-inbox';
 import DecisionInboxItemCard from './DecisionInboxItemCard';
@@ -39,6 +40,9 @@ export default function DecisionInboxModal({
     for (const agent of agents) map.set(agent.id, agent);
     return map;
   }, [agents]);
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  useModalFocus(open, contentRef);
 
   const [followupTarget, setFollowupTarget] = useState<{ itemId: string; optionNumber: number } | null>(null);
   const [followupDraft, setFollowupDraft] = useState('');
@@ -134,6 +138,7 @@ export default function DecisionInboxModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={contentRef}
         className="relative mx-4 w-full max-w-3xl rounded-2xl border border-indigo-500/30 bg-slate-900 shadow-2xl shadow-indigo-500/10"
         onClick={(e) => e.stopPropagation()}
       >

@@ -1,5 +1,5 @@
 import type { SkillHistoryProvider } from "../../api";
-import { Circle, Rocket, Globe, Plug } from "lucide-react";
+import { Circle, Rocket, Globe, Plug, Monitor } from "lucide-react";
 import { Icon } from "../ui/Icon";
 
 export function CliClaudeLogo({ className = "h-3.5 w-3.5" }: { className?: string }) {
@@ -33,5 +33,15 @@ export function cliProviderIcon(provider: SkillHistoryProvider) {
   if (provider === "opencode") return <Icon icon={Circle} size="xs" className="text-slate-200" />;
   if (provider === "copilot") return <Icon icon={Rocket} size="xs" className="text-slate-200" />;
   if (provider === "antigravity") return <Icon icon={Globe} size="xs" className="text-slate-200" />;
+  return <Icon icon={Plug} size="xs" className="text-slate-200" />;
+}
+
+/** MCP/Rules 프로바이더 아이콘 — cursor 등 config-only 프로바이더 포함 */
+export function configProviderIcon(provider: string) {
+  if (provider === "claude") return <CliClaudeLogo />;
+  if (provider === "codex") return <CliCodexLogo />;
+  if (provider === "gemini") return <CliGeminiLogo />;
+  if (provider === "cursor") return <Icon icon={Monitor} size="xs" className="text-blue-300" />;
+  if (provider === "opencode") return <Icon icon={Circle} size="xs" className="text-slate-200" />;
   return <Icon icon={Plug} size="xs" className="text-slate-200" />;
 }
