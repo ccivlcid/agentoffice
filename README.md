@@ -34,10 +34,6 @@
   <b>English</b> | <a href="README_ko.md">한국어</a>
 </p>
 
-<p align="center">
-  <img src="Sample_Img/Office.png" alt="Office View" width="100%" />
-</p>
-
 ---
 
 ## What is HyperClaw?
@@ -105,73 +101,50 @@ HyperClaw transforms your AI coding assistants — connected via **CLI**, **OAut
 <td width="50%">
 
 **Dashboard** — Real-time KPI metrics, agent rankings, and department status at a glance
-
-<img src="Sample_Img/Dashboard.png" alt="Dashboard" width="100%" />
 </td>
 <td width="50%">
 
 **Kanban Board** — Drag-and-drop task management with department and agent filters
-
-<img src="Sample_Img/Kanban.png" alt="Kanban Board" width="100%" />
 </td>
 </tr>
 <tr>
 <td width="50%">
 
 **Skills Library** — Browse and assign 600+ agent skills across categories
-
-<img src="Sample_Img/Skills.png" alt="Skills Library" width="100%" />
 </td>
 <td width="50%">
 
 **Multi-Provider CLI** — Configure Claude Code, Codex, Gemini CLI, OpenCode with model selection
-
-<img src="Sample_Img/CLI.png" alt="CLI Tools Settings" width="100%" />
 </td>
 </tr>
 <tr>
 <td width="50%">
 
 **OAuth Integration** — Secure GitHub & Google OAuth with encrypted token storage
-
-<img src="Sample_Img/OAuth.png" alt="OAuth Settings" width="100%" />
 </td>
 <td width="50%">
 
 **Meeting Minutes** — AI-generated meeting summaries with multi-round review approval
-
-<img src="Sample_Img/Meeting_Minutes.png" alt="Meeting Minutes" width="100%" />
 </td>
 </tr>
 <tr>
 <td width="50%">
 
 **Messenger Integration** — Send `$` CEO directives from Telegram, Discord, Slack and receive real-time task updates via OpenClaw
-
-<img src="Sample_Img/telegram.png" alt="Telegram Integration" width="100%" />
 </td>
 <td width="50%">
 
 **Settings** — Configure company name, CEO name, default provider preferences (CLI/OAuth/API), and language preferences
-
-<img src="Sample_Img/Setting.png" alt="Settings" width="100%" />
 </td>
 </tr>
 <tr>
 <td width="50%">
 
 **Detailed Report** — Example of completion report popup, report history, and detailed report view for a request
-
-<img src="Sample_Img/Report.png" alt="Detailed Report" width="100%" />
 </td>
 <td width="50%">
 
 **PPT Generation** — Example captures of PPT generation output for a report request
-
-<p align="center">
-  <img src="Sample_Img/PPT_Gen0.png" alt="PPT Generation Example 0" width="49%" />
-  <img src="Sample_Img/PPT_Gen1.png" alt="PPT Generation Example 1" width="49%" />
-</p>
 </td>
 </tr>
 </table>
