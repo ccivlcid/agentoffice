@@ -1,0 +1,233 @@
+---
+description: Imported from AGENTS.md
+alwaysApply: true
+---
+<!-- managed-by: climpire-library -->
+
+<!-- BEGIN hyperclaw orchestration rules -->
+# HyperClaw Orchestration Rules
+
+> This section was added by HyperClaw setup (`pnpm setup`).
+> It defines how the AI agent handles CEO directives and task orchestration.
+> Place this at the TOP of your AGENTS.md so it takes priority.
+
+---
+
+## Language Rule
+
+**Always match the user's language.** Detect the language of the user's most recent message and reply in the same language.
+- Korean message -> reply in Korean
+- English message -> reply in English
+- Other languages -> reply in that language
+
+This applies to ALL responses: confirmations, questions, error messages, status updates.
+
+---
+
+## Default Skill Bootstrap
+
+`TASTE_SKILL_DEFAULT_V1`
+
+Set the following as a default skill in your working environment:
+- Local skill file: `tools/taste-skill/skill.md`
+
+Rules:
+1. For non-trivial implementation tasks, load and follow `tools/taste-skill/skill.md` first when the file exists.
+2. If the local file is missing, continue with existing project rules without auto-fetching remote repositories.
+3. Do not remove existing project-specific skills/rules; this is an additive default.
+
+---
+
+## Workflow Orchestration (Additive)
+
+`WORKFLOW_ORCHESTRATION_BASELINE_V1`
+
+These rules are additive and do NOT delete existing orchestration rules below.
+
+### 1) Plan Node Default
+- Enter plan mode for any non-trivial task (3+ steps or architectural decisions).
+- If execution goes sideways, stop and re-plan immediately.
+- Use plan mode for verification, not only implementation.
+- Write clear specs upfront to reduce ambiguity.
+
+### 2) Subagent Strategy
+- Use subagents for research/exploration/parallel analysis to keep main context clean.
+- For complex problems, parallelize with multiple focused subagents.
+- Keep one clear objective per subagent.
+
+### 3) Self-Improvement Loop
+- After user correction, update `tasks/lessons.md` with prevention rules.
+- Turn repeated mistakes into explicit guardrails.
+- Review relevant lessons at session start when applicable.
+
+### 4) Verification Before Done
+- Never mark complete without proof.
+- Diff expected behavior vs actual behavior when relevant.
+- Run tests/check logs and demonstrate correctness.
+
+### 5) Demand Elegance (Balanced)
+- For non-trivial changes, check if there is a cleaner design.
+- If current fix is hacky, prefer the cleaner implementation.
+- Avoid over-engineering trivial fixes.
+
+### 6) Autonomous Bug Fixing
+- When a bug is reported, move directly to reproduction and fix.
+- Use logs/failing tests as evidence and resolve root causes.
+- Minimize user context-switching and avoid unnecessary hand-holding.
+
+## Task Management
+
+1. Plan first: write checklist in `tasks/todo.md`.
+2. Verify plan with user before implementation (when uncertainty is material).
+3. Track progress by marking completed checklist items.
+4. Explain major changes with concise high-level summaries.
+5. Add review results to `tasks/todo.md`.
+6. Capture lessons in `tasks/lessons.md` after corrections.
+
+## Core Principles
+
+- Simplicity first: minimal change surface.
+- No lazy fixes: resolve root cause.
+- Minimal impact: touch only necessary code paths.
+
+---
+
+## CEO Directive (`$` prefix)
+
+**Messages starting with `$` are HyperClaw CEO Directives.**
+
+When receiving a message that **starts with `$`**:
+
+### Step 1: Detect user language
+
+Detect the language of the `$` message and use that language for ALL subsequent interactions in this flow.
+
+### Step 2: Project branch is mandatory (Existing vs New)
+
+**Before sending the directive, ALWAYS ask: "Existing project or new project?"**
+
+Ask in the user's detected language:
+- KO: `기존 프로젝트인가요? 신규 프로젝트인가요?`
+- EN: `Is this an existing project or a new project?`
+- JA: `既存プロジェクトですか？新規プロジェクトですか？`
+- ZH: `这是已有项目还是新项目？`
+
+#### If user says "existing project"
+
+1. Fetch recent projects:
+   ```bash
+   curl -s "http://127.0.0.1:8790/api/projects?page=1&page_size=10"
+   ```
+2. Show only the latest 10 projects as numbered list (1-10): name + path.
+3. Ask user to pick by:
+   - number `1` to `10`, or
+   - project name text.
+4. Resolve selection:
+   - number -> exact list index.
+   - project name -> exact/prefix/contains best match.
+   - if ambiguous or no confident match -> ask user again.
+5. Use selected project metadata:
+   - `project_id` = selected project's id
+   - `project_path` = selected project's path
+   - `project_context` = selected project's core goal from DB
+
+#### If user says "new project"
+
+1. Ask for:
+   - new project name
+   - absolute project path
+2. For `$` directives, **core goal is the directive text itself** (content after `$`).
+3. Create project first:
+   ```bash
+   curl -X POST http://127.0.0.1:8790/api/projects \
+     -H 'content-type: application/json' \
+     -d '{"name":"<project name>","project_path":"<absolute path>","core_goal":"<directive text without $>"}'
+   ```
+4. Use created project metadata:
+   - `project_id` from response
+   - `project_path` from response
+   - `project_context` = created `core_goal`
+
+### Step 3: Ask about team leader meeting
+
+After project is fixed, ask meeting preference.
+
+Ask in the user's detected language:
+- KO: `팀장 소집 회의를 진행할까요?\n1️⃣ 회의 진행 (기획팀 주관)\n2️⃣ 회의 없이 바로 실행`
+- EN: `Convene a team leader meeting?\n1️⃣ Hold meeting (led by Planning)\n2️⃣ Execute without meeting`
+- JA: `チームリーダー会議を開きますか？\n1️⃣ 会議を開催（企画チーム主導）\n2️⃣ 会議なしで直接実行`
+- ZH: `召集组长会议吗？\n1️⃣ 召开会议（企划组主导）\n2️⃣ 不开会直接执行`
+
+### Step 4: Send directive to server
+
+Based on the user's answers:
+- Include project mapping payload:
+  - `"project_id":"<selected/created project id>"`
+  - `"project_path":"<selected/created project path>"`
+  - `"project_context":"<selected/created core goal>"`
+- Use `skipPlannedMeeting` from meeting choice.
+- Resolve `INBOX_WEBHOOK_SECRET` and ALWAYS send it as `x-inbox-secret`.
+- If `INBOX_WEBHOOK_SECRET` is missing, do NOT claim success; ask the user to set it first.
+
+Resolve and validate the secret first (do not assume shell export):
+```bash
+# INBOX_SECRET_DISCOVERY_V2
+INBOX_SECRET_VALUE="${INBOX_WEBHOOK_SECRET:-$(node <<'NODE'
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { execSync } = require("node:child_process");
+
+function readSecret(file) {
+  if (!file || !fs.existsSync(file)) return "";
+  const match = fs.readFileSync(file, "utf8").match(/^INBOX_WEBHOOK_SECRET\\s*=\\s*(.*)$/m);
+  if (!match) return "";
+  const value = match[1].trim().replace(/^['\\\"]|['\\\"]$/g, "");
+  return value && value !== "__CHANGE_ME__" ? value : "";
+}
+
+const candidates = [
+  path.join(process.cwd(), ".env"),
+  path.join(process.cwd(), ".env.clone"),
+];
+
+try {
+  const gitRoot = execSync("git rev-parse --show-toplevel", {
+    stdio: ["ignore", "pipe", "ignore"],
+    encoding: "utf8",
+  }).trim();
+  if (gitRoot) {
+    candidates.push(path.join(gitRoot, ".env"));
+    candidates.push(path.join(gitRoot, ".env.clone"));
+  }
+} catch {
+  // ignore
+}
+
+const home = os.homedir();
+for (const rel of [
+  "Projects/my-project/.env",
+  "projects/my-project/.env",
+  "Projects/my-project/.env.clone",
+  "projects/my-project/.env.clone",
+]) {
+  candidates.push(path.join(home, rel));
+}
+
+for (const file of [...new Set(candidates)]) {
+  const secret = readSecret(file);
+  if (!secret) continue;
+  process.stdout.write(secret);
+  process.exit(0);
+}
+NODE
+)}"
+[ -n "$INBOX_SECRET_VALUE" ] || { echo "INBOX_WEBHOOK_SECRET is missing (.env or shell env)." >&2; exit 1; }
+```
+
+**Option 1 — With meeting (default):**
+```bash
+curl -X POST http://127.0.0.1:8790/api/inbox \
+  -H 'content-type: application/json' \
+  -H "x-inbox-secret: $INBOX_SECRET_VALUE" \
+  -d '{"source":"telegram","text":"$<message content>","author":"<sender>","agent_rules_version":2,"project_id":"<project id>","project_path":"<project path>","project_context":"<project core go

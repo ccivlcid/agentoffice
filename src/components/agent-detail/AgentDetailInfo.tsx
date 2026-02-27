@@ -32,7 +32,7 @@ export default function AgentDetailInfo({
     <div className="space-y-3">
       <div className="bg-slate-700/30 rounded-lg p-3">
         <div className="text-xs text-slate-500 mb-1">
-          {t({ ko: "성격", en: "Personality" })}
+          {t({ ko: "성격 / 역할 프롬프트", en: "Personality / Role Prompt" })}
         </div>
         <div className="text-sm text-slate-300">
           {agent.personality ??

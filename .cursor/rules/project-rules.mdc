@@ -1,18 +1,19 @@
 ---
+description: 프로젝트 공통 규칙. 구조, 환경, 커밋/네이밍 등.
 alwaysApply: true
-description: HAIFeR Web IDE 프로젝트 공통 규칙. 구조, 환경, 커밋/네이밍 등.
 ---
+<!-- managed-by: climpire-library -->
 
-# HAIFeR Web IDE 프로젝트 룰
+# HyperClaw 프로젝트 룰
 
 ## 프로젝트 개요
 
-- **이름**: HAIFeR Web IDE (Java 코드베이스 분석 및 빌드 자동화 플랫폼)
-- **구조**: 모노레포 (pnpm + Turbo)
-  - **프론트**: `apps/web` — Next.js 14, TypeScript, Tailwind, 포트 3001
-  - **백엔드**: `apps/api-backend` — FastAPI, Python 3.13, 포트 8000
-- **패키지 매니저**: 루트·웹 모두 **pnpm** (npm/yarn 사용 금지)
-- **DB**: Oracle 19c (서비스명 DHKDAIPO), ERD/스키마는 `.cursor/rules/erd.mdc` 참고
+- **이름**: HyperClaw (package: `climpire`) — 로컬 우선 AI 에이전트 오피스 시뮬레이터
+- **구조**: 단일 레포, 프론트/백엔드 분리
+  - **프론트**: `src/` — React 19, Vite 7, Tailwind CSS 4, TypeScript, 포트 **8800**
+  - **백엔드**: `server/` — Express 5, Node.js, `node:sqlite` (WAL), WebSocket, 포트 **8790**
+- **패키지 매니저**: **pnpm** (npm/yarn 사용 금지). Node >= 22
+- **DB**: SQLite (내장 `DatabaseSync`). 스키마·마이그레이션은 `server/init/`, 참고: `docs/07데이터베이스/스키마.md`
 
 ## 환경 및 도구
 
@@ -22,28 +23,27 @@ description: HAIFeR Web IDE 프로젝트 공통 규칙. 구조, 환경, 커밋/�
 
 ## 디렉터리·파일 규칙
 
-- **웹**: 페이지/컴포넌트는 `apps/web/app/` 하위, 컴포넌트는 기능별 폴더에 배치
-- **API**: 라우트는 `apps/api-backend/app/api/routes/`, 서비스는 `app/services/`, 스키마는 `app/schemas/`
-- **단일 파일**: **300줄 이하** 유지. 초과 시 모듈/컴포넌트/훅으로 분리
+- **프론트**: 진입점 `src/main.tsx` → `src/App.tsx`. 뷰·컴포넌트는 `src/` 하위 기능별 폴더. API 클라이언트 `src/api/`, 훅 `src/hooks/`
+- **백엔드**: 진입점 `server/index.ts` → `server/server-main.ts`. 라우트 `server/modules/routes/` (core, collab, ops), 워크플로우 `server/modules/workflow/`, 스키마 `server/init/`
+- **단일 파일**: **300줄 이하** 유지 (`pnpm check:lines`). 초과 시 모듈/컴포넌트/훅으로 분리
 - **네이밍**:
   - 프론트: 컴포넌트·페이지 파일명 **PascalCase** 또는 kebab-case, 유틸·훅 **camelCase**
-  - 백엔드: 파일명 **snake_case**, 클래스 **PascalCase**, 함수·메서드 **snake_case**
+  - 백엔드: 기존 TS 컨벤션 유지 (파일명 kebab/camel, 클래스 PascalCase)
 
 ## 코드 품질
 
-- **공통**: `.cursor/rules/clean-code.mdc`, `codequality.mdc` 준수 (DRY, 단일 책임, 주석은 이유 위주)
-- **백엔드**: `.cursor/rules/fastapi.mdc`, `api-backend.mdc` 준수 (타입 힌트, Pydantic, SQL 인젝션 방지)
-- **프론트**: `.cursor/rules/nextjs.mdc`, `web-frontend.mdc`, `react.mdc`, `tailwind.mdc` 준수
-- **입출력**: API·함수 파라미터·반환값 검증 필수 (Pydantic 스키마, TypeScript 타입)
+- **공통**: ESM(`"type": "module"`), TypeScript strict, DRY·단일 책임, 주석은 이유 위주
+- **백엔드**: RuntimeContext 패턴·타입은 `server/types/`. SQL은 파라미터화로 인젝션 방지
+- **프론트**: Prettier(120자, 더블쿼트, trailing comma). 테마·i18n은 `--th-*`, `src/i18n.ts` 활용
+- **입출력**: API·함수 파라미터·반환값 타입 명시 (TypeScript)
 
 ## Git·커밋
 
-- **커밋 메시지**: Conventional Commits
-  - `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
-- **브랜치**: 기능은 `feature/이름`, 수정은 `fix/이름` 등
+- **커밋 메시지**: Conventional Commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`)
+- **브랜치**: `main`(안정), `dev`(통합). 기능은 `feature/이름`, 수정은 `fix/이름` 등
 
 ## 참고 문서
 
-- 개발 워크플로우·코딩 컨벤션 상세: `docs/development.md`
+- 프로젝트 개요·명령어·아키텍처: **`CLAUDE.md`**
 - 프로젝트 명령어 (PowerShell): `.cursor/commands/project-commands.md`
-- 진행 현황·스프린트: `.cursor/rules/project-progress.mdc`
+- 아키텍처·설계: `docs/01아키텍처/`, `docs/02설계/`, `docs/06기술정보/`

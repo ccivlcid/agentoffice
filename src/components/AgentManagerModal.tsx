@@ -3,8 +3,9 @@ import type { Agent, Department } from '../types';
 import { useI18n } from '../i18n';
 import * as api from '../api';
 import { useModalFocus } from '../hooks/useModalFocus';
-import { AVATAR_ICONS } from '../constants/icons';
-import { X } from 'lucide-react';
+import { X, Users, Building2, Plus, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import AgentFormModal from './AgentManagerAgentForm';
+import DeptFormModal from './AgentManagerDeptForm';
 
 type Tab = 'agents' | 'departments';
 
@@ -18,216 +19,16 @@ interface Props {
   onConsumedInitialHire?: () => void;
 }
 
-const AVATAR_ICON_KEYS = Object.keys(AVATAR_ICONS) as string[];
-
-
-function AvatarIconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const IconComp = value && value in AVATAR_ICONS ? AVATAR_ICONS[value] : AVATAR_ICONS.bot;
+function OfficeCharacterDisplay({ spriteNumber }: { spriteNumber: number | string | null | undefined }) {
+  const n = Math.min(13, Math.max(1, Number(spriteNumber) || 1));
   return (
-    <div className="relative">
-      <button type="button" onClick={() => setOpen(!open)} className="flex items-center justify-center rounded border border-slate-600 bg-slate-800 px-3 py-1.5 h-8 w-8 text-slate-300 hover:bg-slate-700">
-        <IconComp width={18} height={18} aria-hidden />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 max-h-48 w-72 overflow-y-auto rounded border border-slate-600 bg-slate-800 p-2 shadow-lg">
-          <div className="grid grid-cols-8 gap-1">
-            {AVATAR_ICON_KEYS.map((key) => {
-              const Icon = AVATAR_ICONS[key];
-              return (
-                <button key={key} type="button" className="flex items-center justify-center rounded p-1.5 hover:bg-slate-700 text-slate-300 hover:text-white" onClick={() => { onChange(key); setOpen(false); }} title={key}>
-                  <Icon width={20} height={20} aria-hidden />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AvatarDisplay({ avatarEmoji }: { avatarEmoji: string | null | undefined }) {
-  const IconComp = avatarEmoji && avatarEmoji in AVATAR_ICONS ? AVATAR_ICONS[avatarEmoji] : null;
-  if (IconComp) return <IconComp width={20} height={20} className="text-slate-300 shrink-0" aria-hidden />;
-  if (avatarEmoji) return <span className="text-lg leading-none" aria-hidden>{avatarEmoji}</span>;
-  return <AVATAR_ICONS.bot width={20} height={20} className="text-slate-400 shrink-0" aria-hidden />;
-}
-
-// ---- Agent Form Modal ----
-function AgentFormModal({ agent, departments, onSave, onCancel }: {
-  agent: Partial<Agent> | null;
-  departments: Department[];
-  onSave: (data: Record<string, unknown>) => void;
-  onCancel: () => void;
-}) {
-  const { t } = useI18n();
-  const isEdit = !!agent?.id;
-  const [name, setName] = useState(agent?.name ?? '');
-  const [nameKo, setNameKo] = useState(agent?.name_ko ?? '');
-  const [nameJa, setNameJa] = useState(agent?.name_ja ?? '');
-  const [nameZh, setNameZh] = useState(agent?.name_zh ?? '');
-  const [deptId, setDeptId] = useState<string>(agent?.department_id ?? (departments[0]?.id ?? ''));
-  const [role, setRole] = useState<string>(agent?.role ?? 'junior');
-  const [cliProvider, setCliProvider] = useState(agent?.cli_provider ?? 'claude');
-  const [spriteNum, setSpriteNum] = useState(agent?.sprite_number ?? 1);
-  const [emoji, setEmoji] = useState(() =>
-    (agent?.avatar_emoji && agent.avatar_emoji in AVATAR_ICONS) ? agent.avatar_emoji : 'bot'
-  );
-  const [personality, setPersonality] = useState(agent?.personality ?? '');
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (!name.trim()) return;
-    setSaving(true);
-    onSave({
-      name: name.trim(), name_ko: nameKo.trim() || name.trim(),
-      name_ja: nameJa.trim() || null, name_zh: nameZh.trim() || null,
-      department_id: deptId, role, cli_provider: cliProvider,
-      sprite_number: spriteNum, avatar_emoji: emoji,
-      personality: personality.trim() || null,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50" onClick={e => e.target === e.currentTarget && onCancel()}>
-      <div className="w-[min(480px,90vw)] max-h-[80vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-xl">
-        <h3 className="mb-4 text-sm font-bold text-white">
-          {isEdit ? t({ ko: '에이전트 편집', en: 'Edit Agent' }) : t({ ko: '새 에이전트 채용', en: 'Hire New Agent' })}
-        </h3>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '이름 (EN)', en: 'Name (EN)' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={name} onChange={e => setName(e.target.value)} /></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '이름 (KO)', en: 'Name (KO)' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={nameKo} onChange={e => setNameKo(e.target.value)} /></label>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '부서', en: 'Department' })}</span>
-              <select className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={deptId ?? ''} onChange={e => setDeptId(e.target.value)}>
-                <option value="">{t({ ko: '휴게실 (미배정)', en: 'Break room (unassigned)' })}</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{d.icon} {d.name}</option>)}
-              </select></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '역할', en: 'Role' })}</span>
-              <select className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={role} onChange={e => setRole(e.target.value)}>
-                <option value="team_leader">Team Leader</option>
-                <option value="senior">Senior</option>
-                <option value="junior">Junior</option>
-                <option value="intern">Intern</option>
-              </select></label>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: 'CLI', en: 'CLI Provider' })}</span>
-              <select className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={cliProvider} onChange={e => setCliProvider(e.target.value as typeof cliProvider)}>
-                {(['claude','codex','cursor','gemini','opencode','copilot','antigravity','api'] as const).map(p => <option key={p} value={p}>{p}</option>)}
-              </select></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '캐릭터', en: 'Character' })}</span>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setSpriteNum(n)}
-                    className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border bg-slate-800 transition-colors ${
-                      spriteNum === n
-                        ? 'border-amber-500 ring-2 ring-amber-500/50'
-                        : 'border-slate-600 hover:border-slate-500'
-                    }`}
-                    title={t({ ko: `캐릭터 ${n}`, en: `Character ${n}` })}
-                    aria-label={t({ ko: `캐릭터 ${n}`, en: `Character ${n}` })}
-                  >
-                    <img
-                      src={`/sprites/${n}-D-1.png`}
-                      alt=""
-                      className="h-full w-full object-cover object-bottom"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  </button>
-                ))}
-              </div></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '아바타', en: 'Avatar' })}</span>
-              <div className="mt-1"><AvatarIconPicker value={emoji} onChange={setEmoji} /></div></label>
-          </div>
-          <label className="block"><span className="text-xs text-slate-400">{t({ ko: '성격', en: 'Personality' })}</span>
-            <textarea className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" rows={2} value={personality} onChange={e => setPersonality(e.target.value)} /></label>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button disabled={saving || !name.trim()} onClick={handleSave} className="flex-1 rounded bg-blue-600 py-2 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40">
-            {saving ? '...' : isEdit ? t({ ko: '저장', en: 'Save' }) : t({ ko: '채용', en: 'Hire' })}
-          </button>
-          <button onClick={onCancel} className="rounded border border-slate-700 px-4 py-2 text-xs text-slate-300">{t({ ko: '취소', en: 'Cancel' })}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---- Department Form Modal ----
-function DeptFormModal({ dept, onSave, onCancel }: {
-  dept: Partial<Department> | null;
-  onSave: (data: Record<string, unknown>) => void;
-  onCancel: () => void;
-}) {
-  const { t } = useI18n();
-  const isEdit = !!dept?.id && !!dept?.name;
-  const [id, setId] = useState(dept?.id ?? '');
-  const [name, setName] = useState(dept?.name ?? '');
-  const [nameKo, setNameKo] = useState(dept?.name_ko ?? '');
-  const [nameJa, setNameJa] = useState(dept?.name_ja ?? '');
-  const [nameZh, setNameZh] = useState(dept?.name_zh ?? '');
-  const [icon, setIcon] = useState(dept?.icon ?? 'folder');
-  const [color, setColor] = useState(dept?.color ?? '#6B7280');
-  const [description, setDescription] = useState(dept?.description ?? '');
-  const [prompt, setPrompt] = useState(dept?.prompt ?? '');
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = () => {
-    if (!name.trim() || !nameKo.trim() || (!isEdit && !id.trim())) return;
-    setSaving(true);
-    onSave({
-      ...(isEdit ? {} : { id: id.trim() }),
-      name: name.trim(), name_ko: nameKo.trim(),
-      name_ja: nameJa.trim() || null, name_zh: nameZh.trim() || null,
-      icon, color, description: description.trim() || null, prompt: prompt.trim() || null,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50" onClick={e => e.target === e.currentTarget && onCancel()}>
-      <div className="w-[min(480px,90vw)] max-h-[80vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-xl">
-        <h3 className="mb-4 text-sm font-bold text-white">
-          {isEdit ? t({ ko: '부서 편집', en: 'Edit Department' }) : t({ ko: '새 부서 생성', en: 'Create Department' })}
-        </h3>
-        <div className="space-y-3">
-          {!isEdit && (
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: 'ID (a-z0-9)', en: 'ID (a-z0-9)' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={id} onChange={e => setId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} /></label>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '이름 (EN)', en: 'Name (EN)' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={name} onChange={e => setName(e.target.value)} /></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '이름 (KO)', en: 'Name (KO)' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={nameKo} onChange={e => setNameKo(e.target.value)} /></label>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '아이콘', en: 'Icon' })}</span>
-              <input className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" value={icon} onChange={e => setIcon(e.target.value)} /></label>
-            <label className="block"><span className="text-xs text-slate-400">{t({ ko: '색상', en: 'Color' })}</span>
-              <input type="color" className="mt-1 h-8 w-full cursor-pointer rounded border border-slate-600 bg-slate-800" value={color} onChange={e => setColor(e.target.value)} /></label>
-          </div>
-          <label className="block"><span className="text-xs text-slate-400">{t({ ko: '설명', en: 'Description' })}</span>
-            <textarea className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" rows={2} value={description} onChange={e => setDescription(e.target.value)} /></label>
-          <label className="block"><span className="text-xs text-slate-400">{t({ ko: '프롬프트', en: 'Prompt' })}</span>
-            <textarea className="mt-1 w-full rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-white" rows={3} value={prompt} onChange={e => setPrompt(e.target.value)} /></label>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button disabled={saving || !name.trim() || !nameKo.trim()} onClick={handleSave} className="flex-1 rounded bg-blue-600 py-2 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-40">
-            {saving ? '...' : isEdit ? t({ ko: '저장', en: 'Save' }) : t({ ko: '생성', en: 'Create' })}
-          </button>
-          <button onClick={onCancel} className="rounded border border-slate-700 px-4 py-2 text-xs text-slate-300">{t({ ko: '취소', en: 'Cancel' })}</button>
-        </div>
-      </div>
-    </div>
+    <img
+      src={`/sprites/${n}-D-1.png`}
+      alt=""
+      className="h-full w-full object-cover object-bottom shrink-0"
+      style={{ imageRendering: 'pixelated' }}
+      aria-hidden
+    />
   );
 }
 
@@ -308,76 +109,166 @@ export default function AgentManagerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div ref={contentRef} className="flex h-[80vh] w-[min(900px,95vw)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
-        {/* Header + Tabs */}
-        <div className="flex items-center gap-4 border-b border-slate-700 px-5 py-3">
-          <h2 className="text-sm font-bold text-white">{t({ ko: '에이전트 매니저', en: 'Agent Manager' })}</h2>
-          <div className="flex rounded-lg border border-slate-700 text-xs">
-            <button onClick={() => setTab('agents')} className={`px-3 py-1.5 ${tab === 'agents' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-              {t({ ko: 'Agents', en: 'Agents' })}
-            </button>
-            <button onClick={() => setTab('departments')} className={`px-3 py-1.5 ${tab === 'departments' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
-              {t({ ko: 'Departments', en: 'Departments' })}
-            </button>
+      <div ref={contentRef} className="flex h-[82vh] max-h-[720px] w-[min(920px,94vw)] flex-col overflow-hidden rounded-2xl shadow-2xl transition-shadow" style={{ background: 'var(--th-bg-sidebar)', border: '1px solid var(--th-border)' }}>
+        {/* Header */}
+        <div className="flex shrink-0 items-center gap-4 px-5 py-4" style={{ borderBottom: '1px solid var(--th-border)' }}>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: 'var(--th-bg-surface)', border: '1px solid var(--th-border)' }}>
+              <Users size={20} style={{ color: 'var(--th-text-accent)' }} aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--th-text-heading)' }}>{t({ ko: '에이전트 매니저', en: 'Agent Manager' })}</h2>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--th-text-muted)' }}>{t({ ko: '에이전트와 부서를 관리합니다', en: 'Manage agents and departments' })}</p>
+            </div>
           </div>
+          <nav className="flex rounded-xl p-1" style={{ background: 'var(--th-bg-surface)', border: '1px solid var(--th-border)' }} aria-label={t({ ko: '탭', en: 'Tabs' })}>
+            <button
+              onClick={() => setTab('agents')}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={tab === 'agents' ? { background: 'var(--th-focus-ring)', color: 'var(--th-text-primary)' } : { color: 'var(--th-text-muted)' }}
+            >
+              <Users size={16} aria-hidden />
+              {t({ ko: '에이전트', en: 'Agents' })}
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: tab === 'agents' ? 'var(--th-bg-sidebar)' : 'transparent', color: 'var(--th-text-muted)' }}>{agents.length}</span>
+            </button>
+            <button
+              onClick={() => setTab('departments')}
+              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              style={tab === 'departments' ? { background: 'var(--th-focus-ring)', color: 'var(--th-text-primary)' } : { color: 'var(--th-text-muted)' }}
+            >
+              <Building2 size={16} aria-hidden />
+              {t({ ko: '부서', en: 'Departments' })}
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: tab === 'departments' ? 'var(--th-bg-sidebar)' : 'transparent', color: 'var(--th-text-muted)' }}>{deptList.length}</span>
+            </button>
+          </nav>
           <div className="flex-1" />
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1" aria-label={t({ ko: '닫기', en: 'Close' })}><X width={18} height={18} /></button>
+          <button onClick={onClose} className="rounded-lg p-2 transition-colors hover:opacity-80" style={{ color: 'var(--th-text-muted)' }} aria-label={t({ ko: '닫기', en: 'Close' })}><X size={20} aria-hidden /></button>
         </div>
 
-        {error && <div className="border-b border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs text-rose-300">{error} <button onClick={() => setError('')} className="ml-2 underline">dismiss</button></div>}
+        {error && (
+          <div className="shrink-0 flex items-center justify-between px-4 py-2.5 text-sm" style={{ background: 'var(--th-bg-surface)', borderBottom: '1px solid var(--th-border)', color: 'var(--th-text-secondary)' }}>
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="text-[11px] font-medium underline" style={{ color: 'var(--th-text-accent)' }}>{t({ ko: '닫기', en: 'Dismiss' })}</button>
+          </div>
+        )}
 
         {/* Agents Tab */}
         {tab === 'agents' && (
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-slate-400">{agents.length} {t({ ko: '명', en: 'agents' })}</span>
-              <button onClick={() => setAgentForm({})} className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500">
-                + {t({ ko: '새 에이전트 채용', en: 'Hire New Agent' })}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex shrink-0 items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--th-border)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--th-text-secondary)' }}>
+                {t({ ko: '등록된 에이전트', en: 'Registered agents' })} <span className="font-normal" style={{ color: 'var(--th-text-muted)' }}>({agents.length})</span>
+              </p>
+              <button
+                onClick={() => setAgentForm({})}
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+                style={{ background: 'var(--th-text-accent)' }}
+              >
+                <Plus size={16} aria-hidden />
+                {t({ ko: '에이전트 채용', en: 'Hire Agent' })}
               </button>
             </div>
-            <div className="space-y-2">
-              {agents.map(a => (
-                <div key={a.id} className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2">
-                  <AvatarDisplay avatarEmoji={a.avatar_emoji} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-white">{a.name} <span className="text-slate-500">({a.name_ko})</span></p>
-                    <p className="text-[10px] text-slate-500">{a.role} · {a.cli_provider} · Sprite #{a.sprite_number ?? 1}</p>
-                  </div>
-                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${a.status === 'working' ? 'bg-emerald-500/20 text-emerald-300' : a.status === 'idle' ? 'bg-slate-600/30 text-slate-400' : 'bg-amber-500/20 text-amber-300'}`}>{a.status}</span>
-                  <button onClick={() => setAgentForm(a)} className="rounded border border-slate-600 px-2 py-1 text-[10px] text-slate-300 hover:text-white">{t({ ko: '편집', en: 'Edit' })}</button>
-                  <button onClick={() => handleAgentDelete(a.id)} disabled={a.status === 'working'} className="rounded border border-red-700/60 px-2 py-1 text-[10px] text-red-400 hover:text-red-300 disabled:opacity-30">{t({ ko: '삭제', en: 'Delete' })}</button>
+            <div className="flex-1 overflow-y-auto p-4">
+              {agents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl py-16 text-center" style={{ background: 'var(--th-bg-surface)', border: '1px dashed var(--th-border)' }}>
+                  <Users size={40} className="mb-3 opacity-50" style={{ color: 'var(--th-text-muted)' }} aria-hidden />
+                  <p className="text-sm font-medium" style={{ color: 'var(--th-text-secondary)' }}>{t({ ko: '등록된 에이전트가 없습니다', en: 'No agents yet' })}</p>
+                  <p className="mt-1 text-xs max-w-[280px]" style={{ color: 'var(--th-text-muted)' }}>{t({ ko: '에이전트를 채용하면 오피스에서 업무를 할당하고 협업할 수 있습니다.', en: 'Hire agents to assign tasks and collaborate in the office.' })}</p>
+                  <button onClick={() => setAgentForm({})} className="mt-4 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white" style={{ background: 'var(--th-text-accent)' }}><Plus size={16} />{t({ ko: '첫 에이전트 채용', en: 'Hire first agent' })}</button>
                 </div>
-              ))}
+              ) : (
+                <ul className="space-y-3">
+                  {agents.map(a => {
+                    const dept = departments.find(d => d.id === a.department_id);
+                    return (
+                      <li key={a.id}>
+                        <div
+                          className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-[var(--th-bg-surface-hover)]"
+                          style={{ background: 'var(--th-bg-surface)', border: '1px solid var(--th-border)' }}
+                        >
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg" style={{ background: 'var(--th-bg-sidebar)', border: '1px solid var(--th-border)' }}>
+                            <OfficeCharacterDisplay spriteNumber={a.sprite_number} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium" style={{ color: 'var(--th-text-heading)' }}>{a.name} <span className="font-normal" style={{ color: 'var(--th-text-muted)' }}>({a.name_ko})</span></p>
+                            <p className="mt-0.5 flex items-center gap-2 text-[11px]" style={{ color: 'var(--th-text-muted)' }}>
+                              <span>{a.role}</span>
+                              <span aria-hidden>·</span>
+                              <span>{a.cli_provider}</span>
+                              {dept && <><span aria-hidden>·</span><span>{dept.name_ko ?? dept.name}</span></>}
+                            </p>
+                          </div>
+                          <span
+                            className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                            style={a.status === 'working' ? { background: 'rgba(34,197,94,0.2)', color: 'rgb(134,239,172)' } : a.status === 'idle' ? { background: 'var(--th-bg-sidebar)', color: 'var(--th-text-muted)' } : { background: 'rgba(234,179,8,0.2)', color: 'rgb(253,224,71)' }}
+                          >
+                            {a.status}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button onClick={() => setAgentForm(a)} className="rounded-lg p-2 transition-colors hover:opacity-80" style={{ color: 'var(--th-text-muted)' }} title={t({ ko: '편집', en: 'Edit' })} aria-label={t({ ko: '편집', en: 'Edit' })}><Pencil size={16} /></button>
+                            <button onClick={() => handleAgentDelete(a.id)} disabled={a.status === 'working'} className="rounded-lg p-2 transition-colors hover:opacity-80 disabled:opacity-30" style={{ color: 'var(--th-text-muted)' }} title={t({ ko: '삭제', en: 'Delete' })} aria-label={t({ ko: '삭제', en: 'Delete' })}><Trash2 size={16} /></button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
         )}
 
         {/* Departments Tab */}
         {tab === 'departments' && (
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-slate-400">{deptList.length} {t({ ko: '개 부서', en: 'departments' })}</span>
-              <button onClick={() => setDeptForm({})} className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500">
-                + {t({ ko: '새 부서', en: 'New Department' })}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex shrink-0 items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--th-border)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--th-text-secondary)' }}>
+                {t({ ko: '부서 목록', en: 'Departments' })} <span className="font-normal" style={{ color: 'var(--th-text-muted)' }}>({deptList.length})</span>
+              </p>
+              <button
+                onClick={() => setDeptForm({})}
+                className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+                style={{ background: 'var(--th-text-accent)' }}
+              >
+                <Plus size={16} aria-hidden />
+                {t({ ko: '부서 추가', en: 'Add Department' })}
               </button>
             </div>
-            <div className="space-y-2">
-              {deptList.map((d, idx) => (
-                <div key={d.id} className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2">
-                  <div className="flex flex-col gap-0.5">
-                    <button disabled={idx === 0} onClick={() => handleDeptReorder(idx, -1)} className="text-[10px] text-slate-500 hover:text-white disabled:opacity-20">▲</button>
-                    <button disabled={idx === deptList.length - 1} onClick={() => handleDeptReorder(idx, 1)} className="text-[10px] text-slate-500 hover:text-white disabled:opacity-20">▼</button>
-                  </div>
-                  <span className="text-lg">{d.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-white">{d.name} <span className="text-slate-500">({d.name_ko})</span></p>
-                    <p className="text-[10px] text-slate-500">{d.id} · {d.agent_count ?? 0} agents · {d.description ?? ''}</p>
-                  </div>
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: d.color }} />
-                  <button onClick={() => setDeptForm(d)} className="rounded border border-slate-600 px-2 py-1 text-[10px] text-slate-300 hover:text-white">{t({ ko: '편집', en: 'Edit' })}</button>
-                  <button onClick={() => handleDeptDelete(d.id)} className="rounded border border-red-700/60 px-2 py-1 text-[10px] text-red-400 hover:text-red-300">{t({ ko: '삭제', en: 'Delete' })}</button>
+            <div className="flex-1 overflow-y-auto p-4">
+              {deptList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-xl py-16 text-center" style={{ background: 'var(--th-bg-surface)', border: '1px dashed var(--th-border)' }}>
+                  <Building2 size={40} className="mb-3 opacity-50" style={{ color: 'var(--th-text-muted)' }} aria-hidden />
+                  <p className="text-sm font-medium" style={{ color: 'var(--th-text-secondary)' }}>{t({ ko: '등록된 부서가 없습니다', en: 'No departments yet' })}</p>
+                  <p className="mt-1 text-xs max-w-[280px]" style={{ color: 'var(--th-text-muted)' }}>{t({ ko: '부서를 만들면 에이전트를 배치하고 역할을 구분할 수 있습니다.', en: 'Create departments to organize agents and roles.' })}</p>
+                  <button onClick={() => setDeptForm({})} className="mt-4 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white" style={{ background: 'var(--th-text-accent)' }}><Plus size={16} />{t({ ko: '첫 부서 만들기', en: 'Create first department' })}</button>
                 </div>
-              ))}
+              ) : (
+                <ul className="space-y-3">
+                  {deptList.map((d, idx) => (
+                    <li key={d.id}>
+                      <div
+                        className="flex items-center gap-4 rounded-xl px-4 py-3 transition-colors hover:bg-[var(--th-bg-surface-hover)]"
+                        style={{ background: 'var(--th-bg-surface)', border: '1px solid var(--th-border)' }}
+                      >
+                        <div className="flex shrink-0 flex-col gap-0.5">
+                          <button disabled={idx === 0} onClick={() => handleDeptReorder(idx, -1)} className="rounded p-1 transition-colors disabled:opacity-20" style={{ color: 'var(--th-text-muted)' }} aria-label={t({ ko: '위로', en: 'Move up' })}><ChevronUp size={18} /></button>
+                          <button disabled={idx === deptList.length - 1} onClick={() => handleDeptReorder(idx, 1)} className="rounded p-1 transition-colors disabled:opacity-20" style={{ color: 'var(--th-text-muted)' }} aria-label={t({ ko: '아래로', en: 'Move down' })}><ChevronDown size={18} /></button>
+                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg" style={{ background: 'var(--th-bg-sidebar)', border: '1px solid var(--th-border)' }}>{d.icon}</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium" style={{ color: 'var(--th-text-heading)' }}>{d.name} <span className="font-normal" style={{ color: 'var(--th-text-muted)' }}>({d.name_ko})</span></p>
+                          <p className="mt-0.5 text-[11px]" style={{ color: 'var(--th-text-muted)' }}>{d.id} · {d.agent_count ?? 0} {t({ ko: '명', en: 'agents' })} {d.description ? `· ${d.description}` : ''}</p>
+                        </div>
+                        <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: d.color || 'var(--th-text-muted)' }} aria-hidden />
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button onClick={() => setDeptForm(d)} className="rounded-lg p-2 transition-colors hover:opacity-80" style={{ color: 'var(--th-text-muted)' }} title={t({ ko: '편집', en: 'Edit' })} aria-label={t({ ko: '편집', en: 'Edit' })}><Pencil size={16} /></button>
+                          <button onClick={() => handleDeptDelete(d.id)} className="rounded-lg p-2 transition-colors hover:opacity-80" style={{ color: 'var(--th-text-muted)' }} title={t({ ko: '삭제', en: 'Delete' })} aria-label={t({ ko: '삭제', en: 'Delete' })}><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         )}

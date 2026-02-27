@@ -74,7 +74,7 @@ export default function DeliverablesView({
       />
 
       <ViewGuide
-        title={t({ ko: "이 화면은 이렇게 쓰세요", en: "How to use this screen" })}
+        title={t({ ko: "사용법 및 가이드", en: "Usage & Guide" })}
         defaultOpen={false}
       >
         <p>
@@ -83,7 +83,7 @@ export default function DeliverablesView({
             en: "Deliverables shows summary, code, tests, and checklists for completed or in-review tasks.",
           })}
         </p>
-        <ul className="list-disc list-inside space-y-1" style={{ color: "var(--th-text-muted)" }}>
+        <ul className="list-disc list-inside space-y-1.5 text-slate-400">
           <li>{t({ ko: "왼쪽 목록에서 기간·부서로 필터한 뒤 항목을 클릭하면 오른쪽에 상세가 열립니다.", en: "Filter by period or department, then click an item to open its detail on the right." })}</li>
           <li>{t({ ko: "상세에서 요약·코드·테스트·체크리스트·프리뷰 로그 탭을 전환해 확인할 수 있습니다.", en: "Use the Summary, Code, Test, Checklist, and Preview tabs to review the deliverable." })}</li>
         </ul>

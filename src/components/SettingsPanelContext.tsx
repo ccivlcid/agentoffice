@@ -11,6 +11,7 @@ import type {
   OAuthConnectProvider,
   DeviceCodeStart,
   GatewayTarget,
+  MessengerSession,
   ApiProvider,
   ApiProviderType,
 } from "../api";
@@ -100,6 +101,9 @@ export interface SettingsPanelContextValue {
   gwTargets: GatewayTarget[];
   gwLoading: boolean;
   loadGwTargets: () => void;
+  gwSessions: MessengerSession[];
+  gwSessionsLoading: boolean;
+  loadGwSessions: () => void;
   gwSelected: string;
   setGwSelected: (v: string) => void;
   gwText: string;

@@ -165,6 +165,7 @@ export {
   deleteRule,
   toggleRule,
   syncRules,
+  scanProjectRules,
   getRulePresets,
   type ProjectRule,
   type RulePreset,
@@ -172,8 +173,13 @@ export {
 
 export {
   getGatewayTargets,
+  getGatewaySessions,
+  saveGatewaySession,
+  deleteGatewaySession,
   sendGatewayMessage,
   type GatewayTarget,
+  type MessengerSession,
+  type GatewaySessionPayload,
 } from './gateway';
 
 export {

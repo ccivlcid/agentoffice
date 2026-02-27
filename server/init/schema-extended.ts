@@ -1,5 +1,6 @@
 // @ts-nocheck
 import type { Database } from "better-sqlite3";
+import { createSchemaMessenger } from "./schema-messenger.ts";
 
 export function createSchemaExtended(db: Database): void {
   db.exec(`
@@ -277,4 +278,5 @@ CREATE TABLE IF NOT EXISTS test_checklists (
 );
 CREATE INDEX IF NOT EXISTS idx_test_checklists_task ON test_checklists(task_id, sort_order ASC);
 `);
+  createSchemaMessenger(db);
 }

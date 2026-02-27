@@ -13,6 +13,7 @@ export function useRules() {
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string[] | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -20,14 +21,30 @@ export function useRules() {
       setRules(r);
       setPresets(p);
       setError(null);
+      return r;
     } catch (e) {
       setError(String(e));
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load().then(async (r) => {
+      if (r.length === 0) {
+        setScanning(true);
+        try {
+          await api.scanProjectRules();
+          await load();
+        } catch {
+          /* ignore auto-scan errors */
+        } finally {
+          setScanning(false);
+        }
+      }
+    });
+  }, [load]);
 
   const handleCreate = async (input: Parameters<typeof api.createRule>[0]) => {
     setSubmitting(true);
@@ -36,8 +53,11 @@ export function useRules() {
       await load();
       setIsCreateOpen(false);
       setError(null);
-    } catch (e) { setError(String(e)); }
-    finally { setSubmitting(false); }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleUpdate = async (id: string, patch: Record<string, unknown>) => {
@@ -47,8 +67,11 @@ export function useRules() {
       await load();
       setEditingRule(null);
       setError(null);
-    } catch (e) { setError(String(e)); }
-    finally { setSubmitting(false); }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -58,15 +81,20 @@ export function useRules() {
       await load();
       setDeleteConfirmId(null);
       setError(null);
-    } catch (e) { setError(String(e)); }
-    finally { setSubmitting(false); }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleToggle = async (id: string) => {
     try {
       await api.toggleRule(id);
       await load();
-    } catch (e) { setError(String(e)); }
+    } catch (e) {
+      setError(String(e));
+    }
   };
 
   const handleSync = async () => {
@@ -76,8 +104,23 @@ export function useRules() {
       const result = await api.syncRules();
       setSyncResult(result.synced);
       setTimeout(() => setSyncResult(null), 3000);
-    } catch (e) { setError(String(e)); }
-    finally { setSyncing(false); }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      await api.scanProjectRules();
+      await load();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleAddPreset = async (preset: RulePreset) => {
@@ -94,10 +137,27 @@ export function useRules() {
   };
 
   return {
-    rules, presets, loading, editingRule, isCreateOpen, deleteConfirmId,
-    submitting, error, syncing, syncResult,
-    setEditingRule, setIsCreateOpen, setDeleteConfirmId,
-    handleCreate, handleUpdate, handleDelete, handleToggle, handleSync, handleAddPreset,
+    rules,
+    presets,
+    loading,
+    editingRule,
+    isCreateOpen,
+    deleteConfirmId,
+    submitting,
+    error,
+    syncing,
+    syncResult,
+    scanning,
+    setEditingRule,
+    setIsCreateOpen,
+    setDeleteConfirmId,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+    handleToggle,
+    handleSync,
+    handleScan,
+    handleAddPreset,
     reload: load,
   };
 }

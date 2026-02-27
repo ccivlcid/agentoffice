@@ -132,7 +132,7 @@ export default function DirectivesView(props: DirectivesViewProps) {
       />
 
       <ViewGuide
-        title={t({ ko: "이 화면은 이렇게 쓰세요", en: "How to use this screen" })}
+        title={t({ ko: "사용법 및 가이드", en: "Usage & Guide" })}
         defaultOpen={false}
       >
         <p>
@@ -141,7 +141,7 @@ export default function DirectivesView(props: DirectivesViewProps) {
             en: "Directives let you create new directives and track progress on active ones.",
           })}
         </p>
-        <ul className="list-disc list-inside space-y-1" style={{ color: "var(--th-text-muted)" }}>
+        <ul className="list-disc list-inside space-y-1.5 text-slate-400">
           <li>{t({ ko: "상단 입력창에 짧은 문장을 넣고 전송하면 새 지시(태스크)가 생성됩니다.", en: "Type a short phrase in the bar and submit to create a new directive (task)." })}</li>
           <li>{t({ ko: "왼쪽 목록에서 지시를 선택하면 오른쪽에서 상세·실행·터미널·회의록을 볼 수 있습니다.", en: "Select a directive from the list to view detail, run, terminal, and meeting minutes." })}</li>
         </ul>

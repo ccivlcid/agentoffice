@@ -48,7 +48,7 @@ const manualChunks = (id: string): string | undefined => {
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    allowedHosts: [".ts.net"],
+    allowedHosts: [".ts.net", ".ngrok-free.dev", ".ngrok.dev"],
     watch: {
       ignored: ["**/.climpire-worktrees/**"],
     },

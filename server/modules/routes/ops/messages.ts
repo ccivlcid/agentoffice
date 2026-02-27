@@ -8,9 +8,9 @@ import { buildInboxItemHelpers } from "./messages-inbox-items.ts";
 import { registerInboxRoutes } from "./messages-inbox-routes.ts";
 import { registerChatRoutes } from "./messages-chat-routes.ts";
 
+
 export function registerOpsMessageRoutes(ctx: RuntimeContext): any {
-  const ENFORCE_DIRECTIVE_PROJECT_BINDING =
-    String(process.env.ENFORCE_DIRECTIVE_PROJECT_BINDING ?? "1").trim() !== "0";
+  const ENFORCE_DIRECTIVE_PROJECT_BINDING = String(process.env.ENFORCE_DIRECTIVE_PROJECT_BINDING ?? "1").trim() !== "0";
   const __ctx: RuntimeContext = ctx;
   const CLI_STATUS_TTL = __ctx.CLI_STATUS_TTL;
   const CLI_TOOLS = __ctx.CLI_TOOLS;
@@ -206,19 +206,35 @@ export function registerOpsMessageRoutes(ctx: RuntimeContext): any {
 
   // Build state helpers
   const stateHelpers = buildDecisionStateHelpers({
-    db, nowMs, findTeamLeader, getAgentDisplayName, l, pickL,
+    db,
+    nowMs,
+    findTeamLeader,
+    getAgentDisplayName,
+    l,
+    pickL,
   });
 
   // Build planning consolidation helpers
   const consolidationHelpers = buildPlanningConsolidationHelpers({
-    db, nowMs, findTeamLeader, getAgentDisplayName, runAgentOneShot, chooseSafeReply, l, pickL,
+    db,
+    nowMs,
+    findTeamLeader,
+    getAgentDisplayName,
+    runAgentOneShot,
+    chooseSafeReply,
+    l,
+    pickL,
     stateHelpers,
     inFlightSets: { projectReviewDecisionConsolidationInFlight, reviewRoundDecisionConsolidationInFlight },
   });
 
   // Build inbox item builder helpers
   const inboxHelpers = buildInboxItemHelpers({
-    db, nowMs, getPreferredLanguage, l, pickL,
+    db,
+    nowMs,
+    getPreferredLanguage,
+    l,
+    pickL,
     PROJECT_REVIEW_TASK_SELECTED_LOG_PREFIX,
     stateHelpers,
     consolidationHelpers,
@@ -226,10 +242,22 @@ export function registerOpsMessageRoutes(ctx: RuntimeContext): any {
 
   // Register decision inbox routes
   registerInboxRoutes({
-    app, db, nowMs, broadcast, appendTaskLog, activeProcesses,
-    startTaskExecutionForAgent, getDeptName, finishReview,
-    seedReviewRevisionSubtasks, processSubtaskDelegations, scheduleNextReviewRound,
-    normalizeTextField, resolveLang, l, pickL,
+    app,
+    db,
+    nowMs,
+    broadcast,
+    appendTaskLog,
+    activeProcesses,
+    startTaskExecutionForAgent,
+    getDeptName,
+    finishReview,
+    seedReviewRevisionSubtasks,
+    processSubtaskDelegations,
+    scheduleNextReviewRound,
+    normalizeTextField,
+    resolveLang,
+    l,
+    pickL,
     inboxHelpers,
     stateHelpers: {
       getProjectReviewDecisionState: stateHelpers.getProjectReviewDecisionState,
@@ -241,14 +269,29 @@ export function registerOpsMessageRoutes(ctx: RuntimeContext): any {
 
   // Register chat / message / announcement / directive routes
   registerChatRoutes({
-    app, db, broadcast, firstQueryValue, normalizeTextField, resolveLang,
-    resolveMessageIdempotencyKey, insertMessageWithIdempotency,
-    recordMessageIngressAuditOr503, recordAcceptedIngressAuditOrRollback,
-    IdempotencyConflictError, StorageBusyError,
-    scheduleAgentReply, handleReportRequest, detectMentions,
-    handleMentionDelegation, handleTaskDelegation, findTeamLeader,
-    scheduleAnnouncementReplies, scheduleTeamLeaderReplies, analyzeDirectivePolicy,
-    shouldExecuteDirectiveDelegation, buildAgentUpgradeRequiredPayload,
+    app,
+    db,
+    broadcast,
+    firstQueryValue,
+    normalizeTextField,
+    resolveLang,
+    resolveMessageIdempotencyKey,
+    insertMessageWithIdempotency,
+    recordMessageIngressAuditOr503,
+    recordAcceptedIngressAuditOrRollback,
+    IdempotencyConflictError,
+    StorageBusyError,
+    scheduleAgentReply,
+    handleReportRequest,
+    detectMentions,
+    handleMentionDelegation,
+    handleTaskDelegation,
+    findTeamLeader,
+    scheduleAnnouncementReplies,
+    scheduleTeamLeaderReplies,
+    analyzeDirectivePolicy,
+    shouldExecuteDirectiveDelegation,
+    buildAgentUpgradeRequiredPayload,
     ENFORCE_DIRECTIVE_PROJECT_BINDING,
   });
 

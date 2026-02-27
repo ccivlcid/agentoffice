@@ -112,7 +112,7 @@ export function useMcpServers() {
       env: Object.keys(envObj).length > 0 ? envObj : undefined,
       description: entry.description,
       category: inferMcpCategory(entry),
-      providers: providers ?? ["claude", "cursor"],
+      providers: providers ?? ["claude", "codex"],
     });
   };
 
@@ -125,7 +125,7 @@ export function useMcpServers() {
       args: preset.args,
       description: preset.description,
       category: preset.category,
-      providers: ["claude", "cursor"],
+      providers: ["claude", "codex"],
     });
   };
 

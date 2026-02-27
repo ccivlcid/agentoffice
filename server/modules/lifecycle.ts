@@ -4,8 +4,13 @@ import { HOST, PKG_VERSION, PORT } from "../config/runtime.ts";
 import { installStaticMiddleware } from "../middleware/static.ts";
 import { attachWebSocketServer } from "../ws/attach.ts";
 import { rotateBreaks } from "./lifecycle/breaks.ts";
-import { recoverOrphanInProgressTasks, recoverInterruptedWorkflowOnStartup, sweepPendingSubtaskDelegations } from "./lifecycle/recovery.ts";
+import {
+  recoverOrphanInProgressTasks,
+  recoverInterruptedWorkflowOnStartup,
+  sweepPendingSubtaskDelegations,
+} from "./lifecycle/recovery.ts";
 import { autoAssignAgentProviders } from "./lifecycle/auto-assign.ts";
+import { startTelegramPolling, stopAllPolling } from "../gateway/telegram-polling.ts";
 
 export function startLifecycle(ctx: RuntimeContext): void {
   const {
@@ -44,6 +49,7 @@ export function startLifecycle(ctx: RuntimeContext): void {
   setTimeout(() => sweepPendingSubtaskDelegations(ctx), 4_000);
   setInterval(() => sweepPendingSubtaskDelegations(ctx), SUBTASK_DELEGATION_SWEEP_MS);
   setTimeout(() => autoAssignAgentProviders(ctx), 4_000);
+  setTimeout(() => startTelegramPolling(ctx), 2_000);
 
   // ---------------------------------------------------------------------------
   // Start HTTP server + WebSocket
@@ -57,22 +63,23 @@ export function startLifecycle(ctx: RuntimeContext): void {
     }
   });
 
-  setInterval(async () => {
-    try {
-      const cred = getDecryptedOAuthToken("google_antigravity");
-      if (!cred || !cred.refreshToken) return;
-      const expiresAtMs = cred.expiresAt && cred.expiresAt < 1e12
-        ? cred.expiresAt * 1000
-        : cred.expiresAt;
-      if (!expiresAtMs) return;
-      if (expiresAtMs < Date.now() + 5 * 60_000) {
-        await refreshGoogleToken(cred);
-        console.log("[oauth] Background refresh: Antigravity token renewed");
+  setInterval(
+    async () => {
+      try {
+        const cred = getDecryptedOAuthToken("google_antigravity");
+        if (!cred || !cred.refreshToken) return;
+        const expiresAtMs = cred.expiresAt && cred.expiresAt < 1e12 ? cred.expiresAt * 1000 : cred.expiresAt;
+        if (!expiresAtMs) return;
+        if (expiresAtMs < Date.now() + 5 * 60_000) {
+          await refreshGoogleToken(cred);
+          console.log("[oauth] Background refresh: Antigravity token renewed");
+        }
+      } catch (err) {
+        console.error("[oauth] Background refresh failed:", err instanceof Error ? err.message : err);
       }
-    } catch (err) {
-      console.error("[oauth] Background refresh failed:", err instanceof Error ? err.message : err);
-    }
-  }, 5 * 60 * 1000);
+    },
+    5 * 60 * 1000,
+  );
 
   const wss = attachWebSocketServer(server, {
     isIncomingMessageOriginTrusted,
@@ -86,6 +93,7 @@ export function startLifecycle(ctx: RuntimeContext): void {
   // ---------------------------------------------------------------------------
   function gracefulShutdown(signal: string): void {
     console.log(`\n[HyperClaw] ${signal} received. Shutting down gracefully...`);
+    stopAllPolling();
 
     for (const [taskId, child] of activeProcesses) {
       console.log(`[HyperClaw] Stopping process for task ${taskId} (pid: ${child.pid})`);
@@ -97,15 +105,20 @@ export function startLifecycle(ctx: RuntimeContext): void {
 
       rollbackTaskWorktree(taskId, "server_shutdown");
 
-      const task = db.prepare("SELECT assigned_agent_id FROM tasks WHERE id = ?").get(taskId) as {
-        assigned_agent_id: string | null;
-      } | undefined;
+      const task = db.prepare("SELECT assigned_agent_id FROM tasks WHERE id = ?").get(taskId) as
+        | {
+            assigned_agent_id: string | null;
+          }
+        | undefined;
       if (task?.assigned_agent_id) {
-        db.prepare("UPDATE agents SET status = 'idle', current_task_id = NULL WHERE id = ?")
-          .run(task.assigned_agent_id);
+        db.prepare("UPDATE agents SET status = 'idle', current_task_id = NULL WHERE id = ?").run(
+          task.assigned_agent_id,
+        );
       }
-      db.prepare("UPDATE tasks SET status = 'cancelled', updated_at = ? WHERE id = ? AND status = 'in_progress'")
-        .run(nowMs(), taskId);
+      db.prepare("UPDATE tasks SET status = 'cancelled', updated_at = ? WHERE id = ? AND status = 'in_progress'").run(
+        nowMs(),
+        taskId,
+      );
       endTaskExecutionSession(taskId, "server_shutdown");
     }
 
@@ -118,7 +131,9 @@ export function startLifecycle(ctx: RuntimeContext): void {
       server.close(() => {
         try {
           db.close();
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         console.log("[HyperClaw] Shutdown complete.");
         process.exit(0);
       });
@@ -134,7 +149,11 @@ export function startLifecycle(ctx: RuntimeContext): void {
   process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
   process.once("SIGUSR2", () => {
-    try { db.close(); } catch { /* ignore */ }
+    try {
+      db.close();
+    } catch {
+      /* ignore */
+    }
     process.kill(process.pid!, "SIGUSR2");
   });
 }

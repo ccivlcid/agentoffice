@@ -1,5 +1,13 @@
 import { useState, useCallback } from "react";
-import { DndContext, DragOverlay, type DragStartEvent, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import type { Department, Agent, Task, MeetingPresence } from "../../../types";
 import type { LangText } from "../../../i18n";
 import DeptCard from "./DeptCard";
@@ -33,6 +41,7 @@ export default function OfficeGrid({
 }: OfficeGridProps) {
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
   const isDraggable = !!onMoveAgent;
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveAgentId(event.active.id as string);
@@ -56,7 +65,12 @@ export default function OfficeGrid({
   const activeAgent = activeAgentId ? agents.find((a) => a.id === activeAgentId) : null;
 
   return (
-    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {departments.map((dept) => (
           <DeptCard

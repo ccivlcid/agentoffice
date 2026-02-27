@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { CustomSkill } from "../../api";
 import type { TFunction } from "./skillsLibraryHelpers";
 import { CATEGORIES, categoryLabel } from "./skillsLibraryHelpers";
@@ -15,7 +15,6 @@ interface SkillEditModalProps {
     repo?: string;
     category?: string;
     description?: string;
-    installs?: number;
   }) => void;
 }
 
@@ -33,7 +32,11 @@ export default function SkillEditModal({
   const [repo, setRepo] = useState(skill?.repo ?? "");
   const [category, setCategory] = useState(skill?.category ?? "");
   const [description, setDescription] = useState(skill?.description ?? "");
-  const [installs, setInstalls] = useState(String(skill?.installs ?? 0));
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -52,7 +55,6 @@ export default function SkillEditModal({
       repo: repo.trim() || undefined,
       category: category || undefined,
       description: description.trim() || undefined,
-      installs: Number.parseInt(installs, 10) || 0,
     });
   }
 
@@ -60,6 +62,9 @@ export default function SkillEditModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="skill-edit-modal-title"
       className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onClose();
@@ -68,9 +73,10 @@ export default function SkillEditModal({
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900/95 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-4 border-b border-slate-700/60 px-5 py-4">
-          <h3 className="text-base font-semibold text-white">
+          <h3 id="skill-edit-modal-title" className="text-base font-semibold text-white">
             {isEdit
               ? t({ ko: "스킬 수정", en: "Edit Skill" })
               : t({ ko: "새 스킬 등록", en: "Register Skill" })}
@@ -127,6 +133,7 @@ export default function SkillEditModal({
               {t({ ko: "스킬 이름", en: "Skill Name" })} *
             </label>
             <input
+              ref={nameInputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -135,6 +142,7 @@ export default function SkillEditModal({
                 en: "e.g. react-component-builder",
               })}
               required
+              autoComplete="off"
               className="w-full bg-slate-900/60 border border-slate-600/50 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25"
             />
             <p className="mt-1 text-[10px] text-slate-500">
@@ -187,50 +195,30 @@ export default function SkillEditModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                {t({ ko: "카테고리", en: "Category" })}
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-slate-900/60 border border-slate-600/50 rounded-lg px-3 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-blue-500/50"
-              >
-                <option value="">
-                  {t({ ko: "자동 분류", en: "Auto-classify" })}
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              {t({ ko: "카테고리", en: "Category" })}
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-900/60 border border-slate-600/50 rounded-lg px-3 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-blue-500/50"
+            >
+              <option value="">
+                {t({ ko: "자동 분류", en: "Auto-classify" })}
+              </option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>
+                  {categoryLabel(cat, t)}
                 </option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {categoryLabel(cat, t)}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-[10px] text-slate-500">
-                {t({
-                  ko: "미선택 시 이름과 저장소 기반으로 자동 분류됩니다",
-                  en: "Auto-classified by name and repo if not selected",
-                })}
-              </p>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                {t({ ko: "설치 수", en: "Installs" })}
-              </label>
-              <input
-                type="number"
-                value={installs}
-                onChange={(e) => setInstalls(e.target.value)}
-                min="0"
-                className="w-full bg-slate-900/60 border border-slate-600/50 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/25"
-              />
-              <p className="mt-1 text-[10px] text-slate-500">
-                {t({
-                  ko: "알고 있는 설치 횟수를 입력하세요. 모르면 0 유지",
-                  en: "Enter known install count. Leave 0 if unknown",
-                })}
-              </p>
-            </div>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] text-slate-500">
+              {t({
+                ko: "미선택 시 이름과 저장소 기반으로 자동 분류됩니다",
+                en: "Auto-classified by name and repo if not selected",
+              })}
+            </p>
           </div>
 
           <div>

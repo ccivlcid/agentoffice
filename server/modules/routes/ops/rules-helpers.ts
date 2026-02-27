@@ -113,21 +113,27 @@ function buildMdcFrontmatter(rule: ProjectRuleRow): string {
   const lines: string[] = [];
   if (rule.description) lines.push(`description: ${rule.description}`);
   let globs: string[];
-  try { globs = JSON.parse(rule.globs); } catch { globs = []; }
+  try {
+    globs = JSON.parse(rule.globs);
+  } catch {
+    globs = [];
+  }
   if (globs.length > 0) lines.push(`globs: ${JSON.stringify(globs)}`);
   if (rule.always_apply) lines.push("alwaysApply: true");
   return lines.join("\n") + "\n";
 }
 
 export function syncRulesToFiles(db: Database): { synced: string[] } {
-  const rules = db.prepare(
-    "SELECT * FROM project_rules WHERE enabled = 1"
-  ).all() as ProjectRuleRow[];
+  const rules = db.prepare("SELECT * FROM project_rules WHERE enabled = 1").all() as ProjectRuleRow[];
 
   const byProvider: Record<string, ProjectRuleRow[]> = {};
   for (const r of rules) {
     let providers: string[];
-    try { providers = JSON.parse(r.providers); } catch { providers = []; }
+    try {
+      providers = JSON.parse(r.providers);
+    } catch {
+      providers = [];
+    }
     for (const p of providers) {
       (byProvider[p] ??= []).push(r);
     }
@@ -183,7 +189,8 @@ function writeMergedInstructions(rules: ProjectRuleRow[] | undefined, dir: strin
   if (!rules || rules.length === 0) return;
   const targetDir = path.join(process.cwd(), dir);
   ensureDir(targetDir);
-  const merged = `${MANAGED_MARKER}\n\n` + rules.map(r => `# ${r.title || r.name}\n\n${r.content}`).join("\n\n---\n\n") + "\n";
+  const merged =
+    `${MANAGED_MARKER}\n\n` + rules.map((r) => `# ${r.title || r.name}\n\n${r.content}`).join("\n\n---\n\n") + "\n";
   fs.writeFileSync(path.join(targetDir, filename), merged, "utf-8");
 }
 
@@ -195,9 +202,13 @@ function cleanManagedFiles(dirPath: string, ext: string): void {
       try {
         const content = fs.readFileSync(filePath, "utf-8");
         if (content.includes(MANAGED_MARKER)) fs.unlinkSync(filePath);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
-  } catch { /* dir may not exist */ }
+  } catch {
+    /* dir may not exist */
+  }
 }
 
 function cleanManagedSkillDirs(skillsDir: string): void {
@@ -210,9 +221,17 @@ function cleanManagedSkillDirs(skillsDir: string): void {
         if (content.includes(MANAGED_MARKER)) {
           fs.unlinkSync(skillMd);
           // Remove dir if empty
-          try { fs.rmdirSync(path.join(skillsDir, d)); } catch { /* not empty */ }
+          try {
+            fs.rmdirSync(path.join(skillsDir, d));
+          } catch {
+            /* not empty */
+          }
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
-  } catch { /* dir may not exist */ }
+  } catch {
+    /* dir may not exist */
+  }
 }

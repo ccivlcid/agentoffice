@@ -1,16 +1,20 @@
 // @ts-nocheck
 
-import type { RuntimeContext, WorkflowCoreExports, WorkflowAgentExports, WorkflowOrchestrationExports } from "../types/runtime-context.ts";
-import { notifyTaskStatus } from "../gateway/client.ts";
+import type {
+  RuntimeContext,
+  WorkflowCoreExports,
+  WorkflowAgentExports,
+  WorkflowOrchestrationExports,
+} from "../types/runtime-context.ts";
+import { createNotifyTaskStatus } from "../gateway/client.ts";
 import { initializeWorkflowPartA } from "./workflow/core.ts";
 import { initializeWorkflowPartB } from "./workflow/agents.ts";
 import { initializeWorkflowPartC } from "./workflow/orchestration.ts";
-import {
-  assertNoUnresolvedDeferredRuntimeFunctions,
-  createDeferredRuntimeProxy,
-} from "./deferred-runtime.ts";
+import { assertNoUnresolvedDeferredRuntimeFunctions, createDeferredRuntimeProxy } from "./deferred-runtime.ts";
 
-export function initializeWorkflow(ctx: RuntimeContext): WorkflowCoreExports & WorkflowAgentExports & WorkflowOrchestrationExports {
+export function initializeWorkflow(
+  ctx: RuntimeContext,
+): WorkflowCoreExports & WorkflowAgentExports & WorkflowOrchestrationExports {
   const runtime: RuntimeContext = ctx;
   const runtimeProxy = createDeferredRuntimeProxy(runtime);
 
@@ -20,7 +24,8 @@ export function initializeWorkflow(ctx: RuntimeContext): WorkflowCoreExports & W
   Object.assign(runtime, initializeWorkflowPartB(runtimeProxy));
   Object.assign(runtime, initializeWorkflowPartC(runtimeProxy));
 
-  // Inject gateway stub into runtime so routes can destructure it from ctx
+  // Inject gateway notification into runtime so routes can destructure it from ctx
+  const notifyTaskStatus = createNotifyTaskStatus(runtime.db);
   (runtime as any).notifyTaskStatus = notifyTaskStatus;
 
   const workflowExports = {

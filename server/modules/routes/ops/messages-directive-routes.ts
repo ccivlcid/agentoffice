@@ -22,13 +22,24 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
   ENFORCE_DIRECTIVE_PROJECT_BINDING: boolean;
 }) {
   const {
-    app, db, broadcast, firstQueryValue, normalizeTextField,
-    resolveMessageIdempotencyKey, insertMessageWithIdempotency,
-    recordMessageIngressAuditOr503, recordAcceptedIngressAuditOrRollback,
-    IdempotencyConflictError, StorageBusyError,
-    detectMentions, handleTaskDelegation, findTeamLeader,
-    scheduleAnnouncementReplies, analyzeDirectivePolicy,
-    shouldExecuteDirectiveDelegation, buildAgentUpgradeRequiredPayload,
+    app,
+    db,
+    broadcast,
+    firstQueryValue,
+    normalizeTextField,
+    resolveMessageIdempotencyKey,
+    insertMessageWithIdempotency,
+    recordMessageIngressAuditOr503,
+    recordAcceptedIngressAuditOrRollback,
+    IdempotencyConflictError,
+    StorageBusyError,
+    detectMentions,
+    handleTaskDelegation,
+    findTeamLeader,
+    scheduleAnnouncementReplies,
+    analyzeDirectivePolicy,
+    shouldExecuteDirectiveDelegation,
+    buildAgentUpgradeRequiredPayload,
     ENFORCE_DIRECTIVE_PROJECT_BINDING,
   } = ctx;
 
@@ -44,11 +55,33 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
     let explicitProjectPath = normalizeTextField(body.project_path);
     let explicitProjectContext = normalizeTextField(body.project_context);
     if (!content || typeof content !== "string") {
-      if (!recordMessageIngressAuditOr503(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "validation_error", statusCode: 400, detail: "content_required" })) return;
+      if (
+        !recordMessageIngressAuditOr503(res, {
+          endpoint: "/api/directives",
+          req,
+          body,
+          idempotencyKey,
+          outcome: "validation_error",
+          statusCode: 400,
+          detail: "content_required",
+        })
+      )
+        return;
       return res.status(400).json({ error: "content_required" });
     }
     if (ENFORCE_DIRECTIVE_PROJECT_BINDING && !explicitProjectId) {
-      if (!recordMessageIngressAuditOr503(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "validation_error", statusCode: 428, detail: "agent_upgrade_required:install_first" })) return;
+      if (
+        !recordMessageIngressAuditOr503(res, {
+          endpoint: "/api/directives",
+          req,
+          body,
+          idempotencyKey,
+          outcome: "validation_error",
+          statusCode: 428,
+          detail: "agent_upgrade_required:install_first",
+        })
+      )
+        return;
       return res.status(428).json(buildAgentUpgradeRequiredPayload());
     }
 
@@ -56,26 +89,80 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
     let created: boolean;
     try {
       ({ message: storedMessage, created } = await insertMessageWithIdempotency({
-        senderType: "ceo", senderId: null, receiverType: "all", receiverId: null,
-        content, messageType: "directive", idempotencyKey,
+        senderType: "ceo",
+        senderId: null,
+        receiverType: "all",
+        receiverId: null,
+        content,
+        messageType: "directive",
+        idempotencyKey,
       }));
     } catch (err) {
       if (err instanceof IdempotencyConflictError) {
-        if (!recordMessageIngressAuditOr503(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "idempotency_conflict", statusCode: 409, detail: "payload_mismatch" })) return;
+        if (
+          !recordMessageIngressAuditOr503(res, {
+            endpoint: "/api/directives",
+            req,
+            body,
+            idempotencyKey,
+            outcome: "idempotency_conflict",
+            statusCode: 409,
+            detail: "payload_mismatch",
+          })
+        )
+          return;
         return res.status(409).json({ error: "idempotency_conflict", idempotency_key: err.key });
       }
       if (err instanceof StorageBusyError) {
-        if (!recordMessageIngressAuditOr503(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "storage_busy", statusCode: 503, detail: `operation=${err.operation}, attempts=${err.attempts}` })) return;
+        if (
+          !recordMessageIngressAuditOr503(res, {
+            endpoint: "/api/directives",
+            req,
+            body,
+            idempotencyKey,
+            outcome: "storage_busy",
+            statusCode: 503,
+            detail: `operation=${err.operation}, attempts=${err.attempts}`,
+          })
+        )
+          return;
         return res.status(503).json({ error: "storage_busy", retryable: true, operation: err.operation });
       }
       throw err;
     }
     const msg = { ...storedMessage };
     if (!created) {
-      if (!recordMessageIngressAuditOr503(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "duplicate", statusCode: 200, messageId: msg.id, detail: "idempotent_replay" })) return;
+      if (
+        !recordMessageIngressAuditOr503(res, {
+          endpoint: "/api/directives",
+          req,
+          body,
+          idempotencyKey,
+          outcome: "duplicate",
+          statusCode: 200,
+          messageId: msg.id,
+          detail: "idempotent_replay",
+        })
+      )
+        return;
       return res.json({ ok: true, message: msg, duplicate: true });
     }
-    if (!(await recordAcceptedIngressAuditOrRollback(res, { endpoint: "/api/directives", req, body, idempotencyKey, outcome: "accepted", statusCode: 200, detail: "created" }, msg.id))) return;
+    if (
+      !(await recordAcceptedIngressAuditOrRollback(
+        res,
+        {
+          endpoint: "/api/directives",
+          req,
+          body,
+          idempotencyKey,
+          outcome: "accepted",
+          statusCode: 200,
+          detail: "created",
+        },
+        msg.id,
+      ))
+    )
+      return;
     broadcast("announcement", msg);
     scheduleAnnouncementReplies(content);
 
@@ -85,14 +172,18 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
     const delegationOptions: DelegationOptions = {
       skipPlannedMeeting: explicitSkip || directivePolicy.skipPlannedMeeting,
       skipPlanSubtasks: explicitSkip || directivePolicy.skipPlanSubtasks,
-      projectId: explicitProjectId, projectPath: explicitProjectPath, projectContext: explicitProjectContext,
+      projectId: explicitProjectId,
+      projectPath: explicitProjectPath,
+      projectContext: explicitProjectContext,
     };
 
     if (shouldDelegate) {
       const planningLeader = findTeamLeader("planning");
       if (planningLeader) {
         const delegationDelay = 3000 + Math.random() * 2000;
-        setTimeout(() => { handleTaskDelegation(planningLeader, content, "", delegationOptions); }, delegationDelay);
+        setTimeout(() => {
+          handleTaskDelegation(planningLeader, content, "", delegationOptions);
+        }, delegationDelay);
       }
       const mentions = detectMentions(content);
       if (mentions.deptIds.length > 0 || mentions.agentIds.length > 0) {
@@ -119,12 +210,7 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
     res.json({ ok: true, message: msg });
   });
 
-  app.post("/api/inbox", (_req, res) => {
-    res.status(410).json({
-      error: "gone",
-      message: "Inbox webhook was removed. Implement your own webhook endpoint for directives.",
-    });
-  });
+  // POST /api/inbox — moved to inbox-routes.ts (registerExternalInboxRoute)
 
   app.delete("/api/messages", (req, res) => {
     const agentId = firstQueryValue(req.query.agent_id);
@@ -135,19 +221,21 @@ export function registerDirectiveAndDeleteRoutes(ctx: {
       return res.json({ ok: true, deleted: result.changes });
     }
     if (agentId) {
-      const result = db.prepare(
-        `DELETE FROM messages WHERE
+      const result = db
+        .prepare(
+          `DELETE FROM messages WHERE
           (sender_type = 'ceo' AND receiver_type = 'agent' AND receiver_id = ?)
           OR (sender_type = 'agent' AND sender_id = ?)
           OR receiver_type = 'all'
-          OR message_type = 'announcement'`
-      ).run(agentId, agentId);
+          OR message_type = 'announcement'`,
+        )
+        .run(agentId, agentId);
       broadcast("messages_cleared", { scope: "agent", agent_id: agentId });
       return res.json({ ok: true, deleted: result.changes });
     }
-    const result = db.prepare(
-      "DELETE FROM messages WHERE receiver_type = 'all' OR message_type = 'announcement'"
-    ).run();
+    const result = db
+      .prepare("DELETE FROM messages WHERE receiver_type = 'all' OR message_type = 'announcement'")
+      .run();
     broadcast("messages_cleared", { scope: "announcements" });
     res.json({ ok: true, deleted: result.changes });
   });

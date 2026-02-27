@@ -1,0 +1,107 @@
+---
+description: Imported from CLAUDE.md
+alwaysApply: true
+---
+<!-- managed-by: climpire-library -->
+
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+HyperClaw (package: `climpire`) — a local-first AI agent office simulator that orchestrates CLI and API-connected AI providers (Claude Code, Codex CLI, Gemini CLI, OpenCode, GitHub Copilot, Antigravity) as a virtual company of autonomous agents. The user is the CEO; AI agents are employees organized into departments.
+
+## Commands
+
+```bash
+# Development (concurrent Vite frontend + Express backend)
+pnpm dev:local          # recommended: binds to 127.0.0.1
+pnpm dev                # binds to 0.0.0.0
+
+# Build
+pnpm build              # tsc -b && vite build
+
+# Tests
+pnpm test               # run all unit tests (frontend + backend)
+pnpm test:web           # frontend only (Vitest + jsdom)
+pnpm test:api           # backend only (Vitest + node)
+pnpm test:e2e           # Playwright E2E tests
+pnpm test:ci            # all tests with coverage + E2E
+
+# Formatting (no ESLint configured)
+pnpm format             # Prettier write
+pnpm format:check       # Prettier check
+
+# Utilities
+pnpm check:lines        # enforce 300-line-per-file limit
+pnpm setup              # inject AGENTS.md orchestration rules
+pnpm arch:map           # generate architecture report
+```
+
+**Package manager**: pnpm only (no npm/yarn). Node >= 22 required.
+
+**Dev servers**: Frontend at `http://127.0.0.1:8800`, Backend at `http://127.0.0.1:8790`.
+
+## Architecture
+
+### Monolith with Frontend/Backend Split
+
+- **`src/`** — React 19 + Vite 7 + Tailwind CSS 4 + TypeScript
+- **`server/`** — Express 5 + Node.js built-in `node:sqlite` (DatabaseSync) + WebSocket (`ws`)
+- Vite dev proxy forwards `/api` and `/ws` to the backend
+
+### Backend (`server/`)
+
+Entry: `server/index.ts` → `server/server-main.ts` (bootstrap).
+
+**RuntimeContext pattern**: A large dependency-injection object assembled at startup, passed to all modules. Uses a deferred proxy to handle circular initialization dependencies. Type definitions split across `server/types/`.
+
+**Route organization** (`server/modules/routes/`):
+- `core/` — Agents, tasks, departments, projects, health, auto-update
+- `collab/` — Chat, coordination, directives, delegation
+- `ops/` — OAuth, settings, skills, terminal, CLI models, messages, reports
+
+**Workflow engine** (`server/modules/workflow/`):
+- `agents/` — CLI provider spawning for 7 different AI providers
+- `orchestration/` — Meetings, review rounds, reconcile, task execution, report flow
+- `worktree*.ts` — Git worktree isolation per agent
+
+**Database**: Node.js built-in `node:sqlite` (`DatabaseSync`) with WAL mode. Schema creation and migrations run at startup in `server/init/`. No dotenv — custom `.env` parser in `server/config/runtime.ts`.
+
+**WebSocket**: Custom hub (`server/ws/hub.ts`) with batched broadcasting for high-frequency events.
+
+### Frontend (`src/`)
+
+Entry: `src/main.tsx` → `src/App.tsx` (top-level state manager for all views).
+
+**Main views**: OfficeView (PixiJS 8 pixel art), Dashboard, TaskBoard, SkillsLibrary, SettingsPanel.
+
+**Key patterns**:
+- API client in `src/api/client.ts` with domain-specific modules in `src/api/`
+- WebSocket via custom `useWebSocket` hook with auto-reconnect (`src/hooks/`)
+- I18n: custom lightweight system (Korean/English) via React Context (`src/i18n.ts`)
+- Theme: dark/light via CSS custom properties (`--th-*`) and `data-theme` attribute (`src/ThemeContext.tsx`)
+
+### Test Structure
+
+- Frontend unit: `src/**/*.test.{ts,tsx}` — Vitest + jsdom + Testing Library + MSW
+- Backend unit: `server/**/*.test.ts` — Vitest + node environment
+- E2E: `tests/e2e/` — Playwright
+- QA scripts: `scripts/qa/` — communication, office, and project-path smoke tests
+
+## Key Conventions
+
+- **300-line file limit**: enforced via `pnpm check:lines`. If a file exceeds 300 lines when you touch it, split it first before adding features.
+- **ESM**: `"type": "module"` throughout. Use ES import/export syntax.
+- **TypeScript strict mode**: target ES2022, module ESNext, bundler resolution.
+- **Prettier**: 120 char width, double quotes, trailing commas, LF line endings. No ESLint.
+- **Naming**: PascalCase for React components, camelCase for hooks/utils, existing TS conventions for backend.
+- **Commit style**: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.).
+- **Branch model**: `main` (stable), `dev` (integration). PRs target `dev`; `main` only for emergency hotfixes. Squash merge preferred.
+- **Language matching**: Always reply in the user's language (Korean ↔ English).
+
+## Environment
+
+Copy `.env.example` to `.env`. Key required variable: `OAUTH_ENCRYPTION_SECRET` (generate a random secret). Most settings have sensible defaults for local development. The server uses a custom `.env` parser — no dotenv dependency.
+

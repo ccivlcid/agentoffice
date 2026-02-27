@@ -207,7 +207,7 @@ export default function Dashboard({
       />
 
       <ViewGuide
-        title={t({ ko: "이 화면은 이렇게 쓰세요", en: "How to use this screen" })}
+        title={t({ ko: "사용법 및 가이드", en: "Usage & Guide" })}
         defaultOpen={false}
       >
         <p>
@@ -216,7 +216,7 @@ export default function Dashboard({
             en: "Dashboard shows company metrics, agent performance, department progress, and recent mission log at a glance.",
           })}
         </p>
-        <ul className="list-disc list-inside space-y-1" style={{ color: "var(--th-text-muted)" }}>
+        <ul className="list-disc list-inside space-y-1.5 text-slate-400">
           <li>{t({ ko: "「미션 시작」으로 업무 관리 뷰로 이동해 새 태스크를 만들 수 있습니다.", en: "Use \"Start Mission\" to go to Tasks and create new tasks." })}</li>
           <li>{t({ ko: "각 블록은 접기/펼치기가 가능하며, 상태가 저장됩니다.", en: "Each block can be collapsed; state is saved." })}</li>
         </ul>

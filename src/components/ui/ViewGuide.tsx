@@ -11,39 +11,32 @@ export interface ViewGuideProps {
 }
 
 /**
- * 뷰별 "이 화면은 이렇게 쓰세요" 접이식 가이드 블록.
+ * 뷰별 "사용법 및 가이드" 접이식 가이드 블록.
  * 도서관·업무지시·결과물·대시보드 등에서 재사용.
+ * 디자인: SkillsLibrary의 "사용법 및 가이드" 패턴 통일.
  */
 export function ViewGuide({ title, children, defaultOpen = true }: ViewGuideProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div
-      className="view-guide rounded-xl overflow-hidden border transition-colors"
-      style={{
-        background: "var(--th-bg-surface)",
-        borderColor: "var(--th-border)",
-      }}
-    >
+    <div className="view-guide bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:opacity-90"
-        style={{ color: "var(--th-text-primary)" }}
+        className="w-full flex items-center gap-2 px-5 py-4 text-left hover:bg-slate-700/30 transition-colors"
         aria-expanded={open}
       >
-        <HelpCircle width={20} height={20} className="shrink-0" style={{ color: "var(--th-focus-ring)" }} aria-hidden />
-        <span className="font-semibold text-sm">{title}</span>
-        <span className="ml-auto shrink-0" style={{ color: "var(--th-text-muted)" }}>
-          {open ? <ChevronDown width={18} height={18} /> : <ChevronRight width={18} height={18} />}
-        </span>
+        <HelpCircle width={22} height={22} className="text-amber-400 shrink-0" aria-hidden />
+        <span className="font-semibold text-white">{title}</span>
+        {open ? (
+          <ChevronDown width={18} height={18} className="text-slate-400 ml-auto" />
+        ) : (
+          <ChevronRight width={18} height={18} className="text-slate-400 ml-auto" />
+        )}
       </button>
       {open && (
-        <div
-          className="px-4 pb-4 pt-0 border-t text-sm space-y-2"
-          style={{ borderColor: "var(--th-border)", color: "var(--th-text-secondary)" }}
-        >
-          {children}
+        <div className="px-5 pb-5 pt-0 border-t border-slate-700/50">
+          <div className="text-sm text-slate-300 space-y-3 mt-3">{children}</div>
         </div>
       )}
     </div>

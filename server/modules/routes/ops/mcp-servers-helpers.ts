@@ -106,14 +106,16 @@ function ensureDir(dirPath: string): void {
 }
 
 export function syncMcpToFiles(db: Database): { synced: string[] } {
-  const servers = db.prepare(
-    "SELECT * FROM mcp_servers WHERE enabled = 1"
-  ).all() as McpServerRow[];
+  const servers = db.prepare("SELECT * FROM mcp_servers WHERE enabled = 1").all() as McpServerRow[];
 
   const byProvider: Record<string, McpServerRow[]> = {};
   for (const s of servers) {
     let providers: string[];
-    try { providers = JSON.parse(s.providers); } catch { providers = []; }
+    try {
+      providers = JSON.parse(s.providers);
+    } catch {
+      providers = [];
+    }
     for (const p of providers) {
       (byProvider[p] ??= []).push(s);
     }
@@ -128,7 +130,11 @@ export function syncMcpToFiles(db: Database): { synced: string[] } {
     const mcpServers: Record<string, any> = {};
     for (const s of byProvider.claude ?? []) {
       const entry: Record<string, any> = { command: s.command };
-      try { entry.args = JSON.parse(s.args); } catch { entry.args = []; }
+      try {
+        entry.args = JSON.parse(s.args);
+      } catch {
+        entry.args = [];
+      }
       const env = safeParseObj(s.env);
       if (env && Object.keys(env).length > 0) entry.env = env;
       mcpServers[s.server_key] = entry;
@@ -145,7 +151,11 @@ export function syncMcpToFiles(db: Database): { synced: string[] } {
     const config: Record<string, any> = { mcpServers: {} };
     for (const s of byProvider.cursor ?? []) {
       const entry: Record<string, any> = { command: s.command };
-      try { entry.args = JSON.parse(s.args); } catch { entry.args = []; }
+      try {
+        entry.args = JSON.parse(s.args);
+      } catch {
+        entry.args = [];
+      }
       const env = safeParseObj(s.env);
       if (env && Object.keys(env).length > 0) entry.env = env;
       config.mcpServers[s.server_key] = entry;
@@ -155,6 +165,26 @@ export function syncMcpToFiles(db: Database): { synced: string[] } {
     synced.push("cursor");
   }
 
+  // Codex: .codex/mcp.json
+  {
+    const mcpPath = path.join(process.cwd(), ".codex", "mcp.json");
+    const config: Record<string, any> = { mcpServers: {} };
+    for (const s of byProvider.codex ?? []) {
+      const entry: Record<string, any> = { command: s.command };
+      try {
+        entry.args = JSON.parse(s.args);
+      } catch {
+        entry.args = [];
+      }
+      const env = safeParseObj(s.env);
+      if (env && Object.keys(env).length > 0) entry.env = env;
+      config.mcpServers[s.server_key] = entry;
+    }
+    ensureDir(path.dirname(mcpPath));
+    fs.writeFileSync(mcpPath, JSON.stringify(config, null, 2), "utf-8");
+    synced.push("codex");
+  }
+
   // Gemini: .gemini/settings.json → mcpServers
   {
     const settingsPath = path.join(process.cwd(), ".gemini", "settings.json");
@@ -162,7 +192,11 @@ export function syncMcpToFiles(db: Database): { synced: string[] } {
     const mcpServers: Record<string, any> = {};
     for (const s of byProvider.gemini ?? []) {
       const entry: Record<string, any> = { command: s.command };
-      try { entry.args = JSON.parse(s.args); } catch { entry.args = []; }
+      try {
+        entry.args = JSON.parse(s.args);
+      } catch {
+        entry.args = [];
+      }
       const env = safeParseObj(s.env);
       if (env && Object.keys(env).length > 0) entry.env = env;
       mcpServers[s.server_key] = entry;

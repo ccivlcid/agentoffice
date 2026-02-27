@@ -9,7 +9,7 @@ import {
   categoryLabel,
 } from "./skills-library/skillsLibraryHelpers";
 import { SKILL_CATEGORY_ICONS } from "../constants/icons";
-import { AlertTriangle, BookOpen, Upload, Search, HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, BookOpen, Upload, Search, HelpCircle, ChevronDown, ChevronRight, GraduationCap } from "lucide-react";
 import SkillCard from "./skills-library/SkillCard";
 import SkillLearnModal from "./skills-library/SkillLearnModal";
 import { useCustomSkills } from "./skills-library/useCustomSkills";
@@ -326,29 +326,38 @@ export default function SkillsLibrary({ agents, initialTab = "skills" }: SkillsL
 })}`}
       </div>
 
-      <div className="rounded-xl border border-slate-700/60 bg-slate-900/50 overflow-hidden">
+      {/* 에이전트 학습 스킬 — MCP 동기화 현황과 동일한 패널 스타일 */}
+      <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--th-border)", background: "var(--th-bg-surface)" }}>
         <button
           type="button"
           onClick={() => setSkillHistoryOpen((v) => !v)}
-          className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-700/30 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--th-bg-surface-hover)]"
+          style={{ color: "var(--th-text-primary)" }}
           aria-expanded={skillHistoryOpen}
         >
-          <div className="text-sm font-semibold text-slate-100">
-            {t({ ko: "에이전트 학습 스킬", en: "Agent Learned Skills" })}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "var(--th-bg-sidebar)", border: "1px solid var(--th-border)" }}>
+            <GraduationCap width={18} height={18} style={{ color: "var(--th-text-accent)" }} aria-hidden />
           </div>
-          <div className="text-[11px] text-slate-500 ml-auto mr-2">
-            {t({ ko: "CLI별 스킬 이력", en: "Per-CLI skill history" })}
+          <div className="min-w-0 flex-1 text-left">
+            <div className="text-sm font-semibold" style={{ color: "var(--th-text-heading)" }}>
+              {t({ ko: "에이전트 학습 스킬", en: "Agent Learned Skills" })}
+            </div>
+            <div className="text-[11px] mt-0.5" style={{ color: "var(--th-text-muted)" }}>
+              {t({ ko: "CLI별 스킬 이력", en: "Per-CLI skill history" })}
+            </div>
           </div>
-          {skillHistoryOpen ? <ChevronDown width={18} height={18} className="text-slate-400" /> : <ChevronRight width={18} height={18} className="text-slate-400" />}
+          {skillHistoryOpen ? <ChevronDown width={18} height={18} style={{ color: "var(--th-text-muted)" }} aria-hidden /> : <ChevronRight width={18} height={18} style={{ color: "var(--th-text-muted)" }} aria-hidden />}
         </button>
         {skillHistoryOpen && (
-          <div className="px-4 pb-4 pt-0 border-t border-slate-700/50">
-            <SkillHistoryPanel
-              agents={agents}
-              refreshToken={historyRefreshToken}
-              onLearningDataChanged={() => setHistoryRefreshToken((prev) => prev + 1)}
-              className="h-[380px]"
-            />
+          <div className="px-4 pb-4 pt-0" style={{ borderTop: "1px solid var(--th-border)" }}>
+            <div className="mt-3">
+              <SkillHistoryPanel
+                agents={agents}
+                refreshToken={historyRefreshToken}
+                onLearningDataChanged={() => setHistoryRefreshToken((prev) => prev + 1)}
+                className="h-[380px]"
+              />
+            </div>
           </div>
         )}
       </div>

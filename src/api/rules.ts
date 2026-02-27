@@ -1,4 +1,4 @@
-import { request, post, put, del } from './client';
+import { request, post, put, del } from "./client";
 
 export interface ProjectRule {
   id: string;
@@ -29,7 +29,7 @@ export interface RulePreset {
 }
 
 export async function getRules(search?: string): Promise<ProjectRule[]> {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
   const j = await request<{ ok: boolean; rules: ProjectRule[] }>(`/api/rules${qs}`);
   return j.rules;
 }
@@ -44,7 +44,7 @@ export async function createRule(input: {
   always_apply?: boolean;
   providers?: string[];
 }): Promise<{ ok: boolean; id: string }> {
-  return post('/api/rules', input) as Promise<{ ok: boolean; id: string }>;
+  return post("/api/rules", input) as Promise<{ ok: boolean; id: string }>;
 }
 
 export async function updateRule(id: string, patch: Record<string, unknown>): Promise<{ ok: boolean }> {
@@ -60,10 +60,14 @@ export async function toggleRule(id: string): Promise<{ ok: boolean; enabled: nu
 }
 
 export async function syncRules(): Promise<{ ok: boolean; synced: string[] }> {
-  return post('/api/rules/sync', {}) as Promise<{ ok: boolean; synced: string[] }>;
+  return post("/api/rules/sync", {}) as Promise<{ ok: boolean; synced: string[] }>;
+}
+
+export async function scanProjectRules(): Promise<{ scanned: number; imported: number }> {
+  return post("/api/rules/scan", {}) as Promise<{ scanned: number; imported: number }>;
 }
 
 export async function getRulePresets(): Promise<RulePreset[]> {
-  const j = await request<{ ok: boolean; presets: RulePreset[] }>('/api/rules/presets');
+  const j = await request<{ ok: boolean; presets: RulePreset[] }>("/api/rules/presets");
   return j.presets;
 }

@@ -6,12 +6,15 @@
 import type { RuntimeContext } from "../../../types/runtime-context.ts";
 import { randomUUID } from "node:crypto";
 import { RULE_PRESETS, syncRulesToFiles } from "./rules-helpers.ts";
+import { scanProjectRules } from "./rules-scan.ts";
 
 export function registerOpsRules(ctx: RuntimeContext): void {
   const { app, db, nowMs } = ctx;
 
   app.get("/api/rules", (req: any, res: any) => {
-    const search = String(req.query.search ?? "").trim().toLowerCase();
+    const search = String(req.query.search ?? "")
+      .trim()
+      .toLowerCase();
     let sql = "SELECT * FROM project_rules";
     const params: unknown[] = [];
     if (search) {
@@ -31,7 +34,7 @@ export function registerOpsRules(ctx: RuntimeContext): void {
     const now = nowMs();
     db.prepare(
       `INSERT INTO project_rules (id, name, title, description, content, category, globs, always_apply, providers, source, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       String(name).trim(),
@@ -60,10 +63,22 @@ export function registerOpsRules(ctx: RuntimeContext): void {
         params.push(String(body[key]).trim());
       }
     }
-    if ("globs" in body) { updates.push("globs = ?"); params.push(typeof body.globs === "string" ? body.globs : JSON.stringify(body.globs ?? [])); }
-    if ("always_apply" in body) { updates.push("always_apply = ?"); params.push(body.always_apply ? 1 : 0); }
-    if ("providers" in body) { updates.push("providers = ?"); params.push(typeof body.providers === "string" ? body.providers : JSON.stringify(body.providers ?? [])); }
-    if ("enabled" in body) { updates.push("enabled = ?"); params.push(body.enabled ? 1 : 0); }
+    if ("globs" in body) {
+      updates.push("globs = ?");
+      params.push(typeof body.globs === "string" ? body.globs : JSON.stringify(body.globs ?? []));
+    }
+    if ("always_apply" in body) {
+      updates.push("always_apply = ?");
+      params.push(body.always_apply ? 1 : 0);
+    }
+    if ("providers" in body) {
+      updates.push("providers = ?");
+      params.push(typeof body.providers === "string" ? body.providers : JSON.stringify(body.providers ?? []));
+    }
+    if ("enabled" in body) {
+      updates.push("enabled = ?");
+      params.push(body.enabled ? 1 : 0);
+    }
     params.push(id);
     const result = db.prepare(`UPDATE project_rules SET ${updates.join(", ")} WHERE id = ?`).run(...params);
     if (result.changes === 0) return res.status(404).json({ error: "not_found" });
@@ -77,10 +92,16 @@ export function registerOpsRules(ctx: RuntimeContext): void {
   });
 
   app.post("/api/rules/:id/toggle", (req: any, res: any) => {
-    const row = db.prepare("SELECT enabled FROM project_rules WHERE id = ?").get(req.params.id) as { enabled: number } | undefined;
+    const row = db.prepare("SELECT enabled FROM project_rules WHERE id = ?").get(req.params.id) as
+      | { enabled: number }
+      | undefined;
     if (!row) return res.status(404).json({ error: "not_found" });
     const newEnabled = row.enabled ? 0 : 1;
-    db.prepare("UPDATE project_rules SET enabled = ?, updated_at = ? WHERE id = ?").run(newEnabled, nowMs(), req.params.id);
+    db.prepare("UPDATE project_rules SET enabled = ?, updated_at = ? WHERE id = ?").run(
+      newEnabled,
+      nowMs(),
+      req.params.id,
+    );
     res.json({ ok: true, enabled: newEnabled });
   });
 
@@ -90,6 +111,41 @@ export function registerOpsRules(ctx: RuntimeContext): void {
       res.json({ ok: true, ...result });
     } catch (err) {
       res.status(500).json({ error: "sync_failed", message: String(err) });
+    }
+  });
+
+  app.post("/api/rules/scan", (_req: any, res: any) => {
+    try {
+      const scanned = scanProjectRules();
+      const existing = db.prepare("SELECT name, source FROM project_rules").all() as { name: string; source: string }[];
+      const existingNames = new Set(existing.map((r) => r.name));
+      let imported = 0;
+      for (const s of scanned) {
+        if (existingNames.has(s.name)) continue;
+        const id = randomUUID();
+        const now = nowMs();
+        db.prepare(
+          `INSERT INTO project_rules (id, name, title, description, content, category, globs, always_apply, providers, source, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          id,
+          s.name,
+          s.title,
+          s.description,
+          s.content,
+          s.category,
+          JSON.stringify(s.globs),
+          s.alwaysApply ? 1 : 0,
+          JSON.stringify(["claude", "cursor"]),
+          s.source,
+          now,
+          now,
+        );
+        imported++;
+      }
+      res.json({ ok: true, scanned: scanned.length, imported });
+    } catch (err) {
+      res.status(500).json({ error: "scan_failed", message: String(err) });
     }
   });
 

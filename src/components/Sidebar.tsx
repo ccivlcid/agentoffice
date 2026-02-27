@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import type { Department, Agent, CompanySettings } from "../types";
+import type { CompanySettings } from "../types";
 import { useI18n } from "../i18n";
 import { Building2, Send, BookOpen, LayoutDashboard, ClipboardList, FolderCheck, Settings, Plug, FileText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -20,10 +20,7 @@ type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "
 interface SidebarProps {
   currentView: View;
   onChangeView: (v: View) => void;
-  departments: Department[];
-  agents: Agent[];
   settings: CompanySettings;
-  connected: boolean;
 }
 
 const NAV_MAIN: { view: View; icon: LucideIcon }[] = [
@@ -46,10 +43,7 @@ const NAV_WORK: { view: View; icon: LucideIcon }[] = [
 export default function Sidebar({
   currentView,
   onChangeView,
-  departments,
-  agents,
   settings,
-  connected,
 }: SidebarProps) {
   const [collapsed, setCollapsedState] = useState(false);
   useEffect(() => {
@@ -66,10 +60,7 @@ export default function Sidebar({
       return next;
     });
   }, []);
-  const { t, locale } = useI18n();
-  const workingCount = agents.filter((a) => a.status === "working").length;
-  const totalAgents = agents.length;
-  const isKorean = locale.startsWith("ko");
+  const { t } = useI18n();
 
   const tr = (ko: string, en: string, ja = en, zh = en) =>
     t({ ko, en, ja, zh });
@@ -189,62 +180,6 @@ export default function Sidebar({
           {!collapsed && <span>{navLabels.settings}</span>}
         </button>
       </nav>
-
-      {/* Department quick stats */}
-      {!collapsed && (
-        <div className="px-3 py-2" style={{ borderTop: '1px solid var(--th-border)' }}>
-          <div className="text-[10px] uppercase font-semibold mb-1.5 tracking-wider" style={{ color: 'var(--th-text-muted)' }}>
-            {tr("부서 현황", "Department Status", "部門状況", "部门状态")}
-          </div>
-          {departments.map((d) => {
-            const deptAgents = agents.filter(
-              (a) => a.department_id === d.id
-            );
-            const working = deptAgents.filter(
-              (a) => a.status === "working"
-            ).length;
-            return (
-              <div
-                key={d.id}
-                className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs hover:bg-[var(--th-bg-surface-hover)] transition-colors"
-                style={{ color: 'var(--th-text-secondary)' }}
-              >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color || 'var(--th-text-muted)' }} />
-                <span className="flex-1 truncate">
-                  {isKorean ? d.name_ko || d.name : d.name || d.name_ko}
-                </span>
-                <span
-                  className={
-                    working > 0 ? "text-blue-400 font-medium" : ""
-                  }
-                >
-                  {working}/{deptAgents.length}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Status bar */}
-      <div className="px-3 py-2.5" style={{ borderTop: '1px solid var(--th-border)' }}>
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-2.5 h-2.5 rounded-full ${
-              connected ? "bg-green-500 animate-pulse" : "bg-red-500"
-            }`}
-          />
-          {!collapsed && (
-            <div className="text-[10px]" style={{ color: 'var(--th-text-muted)' }}>
-              {connected
-                ? tr("연결됨", "Connected", "接続中", "已连接")
-                : tr("연결 끊김", "Disconnected", "接続なし", "已断开")}{" "}
-              · {workingCount}/{totalAgents}{" "}
-              {tr("근무중", "working", "稼働中", "工作中")}
-            </div>
-          )}
-        </div>
-      </div>
     </aside>
   );
 }

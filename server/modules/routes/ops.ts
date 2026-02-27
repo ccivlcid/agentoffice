@@ -21,6 +21,8 @@ import { registerOpsTesting } from "./ops/testing.ts";
 import { registerOpsTestingDetect } from "./ops/testing-detect.ts";
 import { registerOpsPreview } from "./ops/preview.ts";
 import { registerOpsChecklist } from "./ops/checklist.ts";
+import { registerOpsGatewayRoutes } from "./ops/gateway-routes.ts";
+import { registerExternalInboxRoute } from "./ops/inbox-routes.ts";
 
 export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
   const __ctx: RuntimeContext = ctx;
@@ -197,8 +199,8 @@ export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
   registerOpsTestingDetect(__ctx);
   registerOpsPreview(__ctx);
   registerOpsChecklist(__ctx);
-
-
+  registerOpsGatewayRoutes(__ctx);
+  registerExternalInboxRoute(__ctx);
 
   return {
     prettyStreamJson: terminalExports.prettyStreamJson,

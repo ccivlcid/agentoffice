@@ -3,11 +3,14 @@ import type { Agent } from '../types';
 import { Bot } from 'lucide-react';
 import { AVATAR_ICONS } from '../constants/icons';
 
-/** Map agent IDs to sprite numbers (stable order, same as OfficeView) */
+/** Map agent IDs to sprite numbers. Uses agent.sprite_number when set (same as OfficeView and Agent Manager). */
 export function buildSpriteMap(agents: Agent[]): Map<string, number> {
   const map = new Map<string, number>();
   const sorted = [...agents].sort((a, b) => a.id.localeCompare(b.id));
-  sorted.forEach((a, i) => map.set(a.id, (i % 13) + 1));
+  sorted.forEach((a, i) => {
+    const n = Math.min(13, Math.max(1, Number(a.sprite_number) || (i % 13) + 1));
+    map.set(a.id, n);
+  });
   return map;
 }
 
@@ -16,11 +19,13 @@ export function useSpriteMap(agents: Agent[]): Map<string, number> {
   return useMemo(() => buildSpriteMap(agents), [agents]);
 }
 
-/** Get the sprite number for an agent by ID */
+/** Get the sprite number for an agent by ID (uses agent.sprite_number when set) */
 export function getSpriteNum(agents: Agent[], agentId: string): number | undefined {
+  const agent = agents.find((a) => a.id === agentId);
+  if (!agent) return undefined;
   const sorted = [...agents].sort((a, b) => a.id.localeCompare(b.id));
   const idx = sorted.findIndex((a) => a.id === agentId);
-  return idx >= 0 ? (idx % 13) + 1 : undefined;
+  return Math.min(13, Math.max(1, Number(agent.sprite_number) || (idx >= 0 ? (idx % 13) + 1 : 1)));
 }
 
 interface AgentAvatarProps {

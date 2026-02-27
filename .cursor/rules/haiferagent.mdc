@@ -1,7 +1,8 @@
 ---
 description: HAIFeR Agent 레포 전용 — 프로젝트 구조, 300줄 규칙, 리팩토링 참고.
-globs: ["server/**", "src/**"]
+globs: ["server/**","src/**"]
 ---
+<!-- managed-by: climpire-library -->
 
 # HAIFeR Agent 전용 규칙
 

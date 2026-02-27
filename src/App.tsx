@@ -327,10 +327,7 @@ export default function App() {
           <Sidebar
             currentView={view}
             onChangeView={setView}
-            departments={departments}
-            agents={agents}
             settings={settings}
-            connected={connected}
           />
         </div>
         {mobileNavOpen && (
@@ -349,10 +346,7 @@ export default function App() {
               setView(v);
               setMobileNavOpen(false);
             }}
-            departments={departments}
-            agents={agents}
             settings={settings}
-            connected={connected}
           />
         </div>
 

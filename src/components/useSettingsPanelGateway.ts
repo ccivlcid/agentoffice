@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../api";
-import type { GatewayTarget } from "../api";
+import type { GatewayTarget, MessengerSession } from "../api";
 import type { TFunction } from "./SettingsPanelShared.tsx";
 
 export interface UseSettingsPanelGatewayParams {
@@ -12,6 +12,9 @@ export interface UseSettingsPanelGatewayReturn {
   gwTargets: GatewayTarget[];
   gwLoading: boolean;
   loadGwTargets: () => void;
+  gwSessions: MessengerSession[];
+  gwSessionsLoading: boolean;
+  loadGwSessions: () => void;
   gwSelected: string;
   setGwSelected: (v: string) => void;
   gwText: string;
@@ -27,6 +30,8 @@ export function useSettingsPanelGateway({
 }: UseSettingsPanelGatewayParams): UseSettingsPanelGatewayReturn {
   const [gwTargets, setGwTargets] = useState<GatewayTarget[]>([]);
   const [gwLoading, setGwLoading] = useState(false);
+  const [gwSessions, setGwSessions] = useState<MessengerSession[]>([]);
+  const [gwSessionsLoading, setGwSessionsLoading] = useState(false);
   const [gwSelected, setGwSelected] = useState<string>(
     () =>
       typeof window !== "undefined"
@@ -54,8 +59,16 @@ export function useSettingsPanelGateway({
       .finally(() => setGwLoading(false));
   }, [gwSelected]);
 
+  const loadGwSessions = useCallback(() => {
+    setGwSessionsLoading(true);
+    api.getGatewaySessions().then(setGwSessions).catch(console.error).finally(() => setGwSessionsLoading(false));
+  }, []);
+
   useEffect(() => {
-    if (tab === "gateway" && gwTargets.length === 0 && !gwLoading) loadGwTargets();
+    if (tab === "gateway") {
+      if (gwSessions.length === 0 && !gwSessionsLoading) loadGwSessions();
+      if (gwTargets.length === 0 && !gwLoading) loadGwTargets();
+    }
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGwSend = useCallback(async () => {
@@ -84,6 +97,9 @@ export function useSettingsPanelGateway({
     gwTargets,
     gwLoading,
     loadGwTargets,
+    gwSessions,
+    gwSessionsLoading,
+    loadGwSessions,
     gwSelected,
     setGwSelected,
     gwText,
