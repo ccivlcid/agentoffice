@@ -50,20 +50,28 @@ export const LOCALE_TAGS: Record<Locale, string> = {
   en: 'en-US',
 };
 
-export const COLUMNS: {
+export interface ColumnDef {
   status: TaskStatus;
   headerBg: string;
   borderColor: string;
   dotColor: string;
-}[] = [
-  { status: 'inbox', headerBg: 'bg-slate-800', borderColor: 'border-slate-600', dotColor: 'bg-slate-400' },
-  { status: 'planned', headerBg: 'bg-blue-900', borderColor: 'border-blue-700', dotColor: 'bg-blue-400' },
-  { status: 'collaborating', headerBg: 'bg-indigo-900', borderColor: 'border-indigo-700', dotColor: 'bg-indigo-400' },
-  { status: 'in_progress', headerBg: 'bg-amber-900', borderColor: 'border-amber-700', dotColor: 'bg-amber-400' },
-  { status: 'review', headerBg: 'bg-purple-900', borderColor: 'border-purple-700', dotColor: 'bg-purple-400' },
-  { status: 'done', headerBg: 'bg-green-900', borderColor: 'border-green-700', dotColor: 'bg-green-400' },
-  { status: 'pending', headerBg: 'bg-orange-900', borderColor: 'border-orange-700', dotColor: 'bg-orange-400' },
-  { status: 'cancelled', headerBg: 'bg-red-900', borderColor: 'border-red-700', dotColor: 'bg-red-400' },
+  accent: string;
+  gradientFrom: string;
+  gradientTo: string;
+  accentLight: string;
+  gradientFromLight: string;
+  gradientToLight: string;
+}
+
+export const COLUMNS: ColumnDef[] = [
+  { status: 'inbox', headerBg: 'bg-slate-800', borderColor: 'border-slate-600', dotColor: 'bg-slate-400', accent: '#94a3b8', gradientFrom: '#475569', gradientTo: '#64748b', accentLight: '#64748b', gradientFromLight: '#cbd5e1', gradientToLight: '#94a3b8' },
+  { status: 'planned', headerBg: 'bg-blue-900', borderColor: 'border-blue-700', dotColor: 'bg-blue-400', accent: '#60a5fa', gradientFrom: '#1e40af', gradientTo: '#2563eb', accentLight: '#2563eb', gradientFromLight: '#bfdbfe', gradientToLight: '#60a5fa' },
+  { status: 'collaborating', headerBg: 'bg-indigo-900', borderColor: 'border-indigo-700', dotColor: 'bg-indigo-400', accent: '#818cf8', gradientFrom: '#3730a3', gradientTo: '#4f46e5', accentLight: '#4f46e5', gradientFromLight: '#c7d2fe', gradientToLight: '#818cf8' },
+  { status: 'in_progress', headerBg: 'bg-amber-900', borderColor: 'border-amber-700', dotColor: 'bg-amber-400', accent: '#fbbf24', gradientFrom: '#b45309', gradientTo: '#d97706', accentLight: '#d97706', gradientFromLight: '#fde68a', gradientToLight: '#fbbf24' },
+  { status: 'review', headerBg: 'bg-purple-900', borderColor: 'border-purple-700', dotColor: 'bg-purple-400', accent: '#c084fc', gradientFrom: '#6b21a8', gradientTo: '#7c3aed', accentLight: '#7c3aed', gradientFromLight: '#e9d5ff', gradientToLight: '#c084fc' },
+  { status: 'done', headerBg: 'bg-green-900', borderColor: 'border-green-700', dotColor: 'bg-green-400', accent: '#4ade80', gradientFrom: '#166534', gradientTo: '#16a34a', accentLight: '#16a34a', gradientFromLight: '#bbf7d0', gradientToLight: '#4ade80' },
+  { status: 'pending', headerBg: 'bg-orange-900', borderColor: 'border-orange-700', dotColor: 'bg-orange-400', accent: '#fb923c', gradientFrom: '#9a3412', gradientTo: '#c2410c', accentLight: '#c2410c', gradientFromLight: '#fed7aa', gradientToLight: '#fb923c' },
+  { status: 'cancelled', headerBg: 'bg-red-900', borderColor: 'border-red-700', dotColor: 'bg-red-400', accent: '#f87171', gradientFrom: '#991b1b', gradientTo: '#dc2626', accentLight: '#dc2626', gradientFromLight: '#fecaca', gradientToLight: '#f87171' },
 ];
 
 export const STATUS_OPTIONS: TaskStatus[] = [
@@ -78,6 +86,18 @@ export const TASK_TYPE_OPTIONS: { value: TaskType; color: string }[] = [
   { value: 'presentation', color: 'bg-orange-900 text-orange-300' },
   { value: 'documentation', color: 'bg-teal-900 text-teal-300' },
 ];
+
+/** task_type별 인라인 색상 (결과물 카드·상세 헤더 악센트/뱃지)
+ *  general=슬레이트, development=시안, design=핑크, analysis=보라, presentation=앰버, documentation=틸
+ */
+export const TASK_TYPE_COLORS: Record<TaskType, { accent: string; bg: string; bgLight: string }> = {
+  general:       { accent: '#94a3b8', bg: 'rgba(148,163,184,0.12)', bgLight: 'rgba(100,116,139,0.10)' },
+  development:   { accent: '#38bdf8', bg: 'rgba(56,189,248,0.12)',  bgLight: 'rgba(14,165,233,0.10)' },
+  design:        { accent: '#f472b6', bg: 'rgba(244,114,182,0.12)', bgLight: 'rgba(236,72,153,0.10)' },
+  analysis:      { accent: '#a78bfa', bg: 'rgba(167,139,250,0.12)', bgLight: 'rgba(139,92,246,0.10)' },
+  presentation:  { accent: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  bgLight: 'rgba(245,158,11,0.10)' },
+  documentation: { accent: '#34d399', bg: 'rgba(52,211,153,0.12)',  bgLight: 'rgba(16,185,129,0.10)' },
+};
 
 // ── Helper functions ───────────────────────────────────────────────────────────
 

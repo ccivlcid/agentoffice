@@ -14,6 +14,10 @@ import { registerOpsSkillsLearn } from "./ops/skills-learn.ts";
 import { registerOpsTerminal } from "./ops/terminal.ts";
 import { registerOpsOAuth } from "./ops/oauth.ts";
 import { registerOpsSkillDocuments } from "./ops/skill-documents.ts";
+import { registerOpsTesting } from "./ops/testing.ts";
+import { registerOpsTestingDetect } from "./ops/testing-detect.ts";
+import { registerOpsPreview } from "./ops/preview.ts";
+import { registerOpsChecklist } from "./ops/checklist.ts";
 
 export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
   const __ctx: RuntimeContext = ctx;
@@ -183,6 +187,10 @@ export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
   registerOpsSkillDocuments(__ctx);
   const terminalExports = registerOpsTerminal(__ctx);
   registerOpsOAuth(__ctx);
+  registerOpsTesting(__ctx);
+  registerOpsTestingDetect(__ctx);
+  registerOpsPreview(__ctx);
+  registerOpsChecklist(__ctx);
 
 
 

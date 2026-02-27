@@ -1,4 +1,4 @@
-import { Castle } from "lucide-react";
+import { Castle, ChevronDown, ChevronUp } from "lucide-react";
 import type { TFunction } from "./dashboardHelpers";
 
 type DeptData = {
@@ -16,6 +16,8 @@ interface DashboardDeptProgressProps {
   numberFormatter: Intl.NumberFormat;
   t: TFunction;
   onSelectDepartment?: (deptId: string) => void;
+  folded?: boolean;
+  onToggleFold?: () => void;
 }
 
 export default function DashboardDeptProgress({
@@ -23,30 +25,45 @@ export default function DashboardDeptProgress({
   numberFormatter,
   t,
   onSelectDepartment,
+  folded = false,
+  onToggleFold,
 }: DashboardDeptProgressProps) {
   if (deptData.length === 0) return null;
 
+  const toggleLabel = folded
+    ? t({ ko: "부서 진행률 펼치기", en: "Expand dept progress" })
+    : t({ ko: "부서 진행률 접기", en: "Collapse dept progress" });
+
   return (
     <div className="game-panel p-5">
-      <h2
-        className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-wider"
-        style={{ color: "var(--th-text-primary)" }}
-      >
+      <div className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-wider" style={{ color: "var(--th-text-primary)" }}>
         <span
           className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15"
           style={{ boxShadow: "0 0 8px rgba(59,130,246,0.3)" }}
         >
           <Castle width={14} height={14} className="text-blue-400" />
         </span>
-        {t({ ko: "부서 진행률", en: "DEPT. PROGRESS" })}
+        <span>{t({ ko: "부서 진행률", en: "DEPT. PROGRESS" })}</span>
         <span
           className="ml-auto text-[9px] font-medium normal-case tracking-normal"
           style={{ color: "var(--th-text-muted)" }}
         >
           {t({ ko: "부서별 성과", en: "by department" })}
         </span>
-      </h2>
+        {onToggleFold && (
+          <button
+            type="button"
+            onClick={onToggleFold}
+            className="rounded-lg p-1.5 transition hover:bg-white/10"
+            aria-label={toggleLabel}
+            title={toggleLabel}
+          >
+            {folded ? <ChevronDown width={16} height={16} /> : <ChevronUp width={16} height={16} />}
+          </button>
+        )}
+      </div>
 
+      {!folded && (
       <div className="space-y-2.5">
         {deptData.map((dept) => (
           <article
@@ -107,6 +124,7 @@ export default function DashboardDeptProgress({
           </article>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -202,6 +202,29 @@ export async function getWorktrees(): Promise<{
   );
 }
 
+// ── Timeline & clone ─────────────────────────────────────────────────────
+
+export interface TaskTimelineEvent {
+  id: number;
+  kind: string;
+  message: string;
+  created_at: number;
+  agent_id?: string | null;
+  agent_name?: string | null;
+  old_status?: string | null;
+  new_status?: string | null;
+}
+
+export async function getTaskTimeline(id: string): Promise<TaskTimelineEvent[]> {
+  const j = await request<{ events: TaskTimelineEvent[] }>(`/api/tasks/${id}/timeline`);
+  return j.events;
+}
+
+export async function cloneTask(id: string): Promise<string> {
+  const j = (await post(`/api/tasks/${id}/clone`)) as { id: string };
+  return j.id;
+}
+
 export async function getActiveSubtasks(): Promise<SubTask[]> {
   const j = await request<{ subtasks: SubTask[] }>('/api/subtasks?active=1');
   return j.subtasks ?? [];

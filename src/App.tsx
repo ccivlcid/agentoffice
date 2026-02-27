@@ -5,6 +5,8 @@ import Dashboard from "./components/Dashboard";
 import TaskBoard from "./components/TaskBoard";
 import SkillsLibrary from "./components/SkillsLibrary";
 import SettingsPanel from "./components/SettingsPanel";
+import DirectivesView from "./components/directives/DirectivesView";
+import DeliverablesView from "./components/deliverables/DeliverablesView";
 import { AppHeader } from "./components/AppHeader";
 import { AppBanners } from "./components/AppBanners";
 import { AppModals } from "./components/AppModals";
@@ -382,6 +384,25 @@ export default function App() {
             onDismissUpdateBanner={(v) => setDismissedUpdateVersion(v)}
           />
           <div className="p-3 sm:p-4 lg:p-6">
+            {view === "directives" && (
+              <DirectivesView
+                tasks={tasks}
+                agents={agents}
+                departments={departments}
+                subtasks={subtasks}
+                onCreateTask={handlers.handleCreateTask}
+                onUpdateTask={handlers.handleUpdateTask}
+                onDeleteTask={handlers.handleDeleteTask}
+                onAssignTask={handlers.handleAssignTask}
+                onRunTask={handlers.handleRunTask}
+                onStopTask={handlers.handleStopTask}
+                onPauseTask={handlers.handlePauseTask}
+                onResumeTask={handlers.handleResumeTask}
+                onOpenTerminal={(id) => setTaskPanel({ taskId: id, tab: "terminal" })}
+                onOpenMeetingMinutes={(id) => setTaskPanel({ taskId: id, tab: "minutes" })}
+                onViewDeliverable={() => setView("deliverables")}
+              />
+            )}
             {view === "office" && (
               <OfficeView
                 departments={departments}
@@ -440,6 +461,15 @@ export default function App() {
                 onResumeTask={handlers.handleResumeTask}
                 onOpenTerminal={(id) => setTaskPanel({ taskId: id, tab: "terminal" })}
                 onOpenMeetingMinutes={(id) => setTaskPanel({ taskId: id, tab: "minutes" })}
+              />
+            )}
+            {view === "deliverables" && (
+              <DeliverablesView
+                tasks={tasks}
+                agents={agents}
+                departments={departments}
+                onDeleteTask={handlers.handleDeleteTask}
+                onNavigateToDirectives={() => setView("directives")}
               />
             )}
             {view === "skills" && <SkillsLibrary agents={agents} />}

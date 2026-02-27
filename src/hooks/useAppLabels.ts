@@ -24,8 +24,10 @@ export function computeAppLabels(uiLanguage: UiLanguage): AppLabels {
     loadingSubtitle: pl({ ko: "AI 에이전트 사무실을 준비하고 있습니다", en: "Preparing your AI agent office" }),
     viewTitles: {
       office: pl({ ko: "오피스", en: "Office" }),
+      directives: pl({ ko: "업무지시", en: "Directives" }),
       dashboard: pl({ ko: "대시보드", en: "Dashboard" }),
       tasks: pl({ ko: "업무 관리", en: "Tasks" }),
+      deliverables: pl({ ko: "결과물", en: "Deliverables" }),
       skills: pl({ ko: "문서고", en: "Skills" }),
       settings: pl({ ko: "설정", en: "Settings" }),
     },

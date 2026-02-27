@@ -43,6 +43,9 @@ export {
   type TaskDiffResult,
   type MergeResult,
   type WorktreeEntry,
+  getTaskTimeline,
+  cloneTask,
+  type TaskTimelineEvent,
 } from './tasks';
 
 export {
@@ -181,6 +184,24 @@ export {
   type ActiveAgentInfo,
   type CliProcessInfo,
 } from './active-agents';
+
+export {
+  getTestRuns,
+  startTestRun,
+  detectTestScripts,
+  getPreviewSessions,
+  startPreview,
+  stopPreview,
+  getChecklist,
+  addChecklistItem,
+  updateChecklistItem,
+  deleteChecklistItem,
+  generateChecklist,
+  type TestRun,
+  type DetectedScript,
+  type PreviewSession,
+  type ChecklistItem,
+} from './testing';
 
 export {
   getGitHubStatus,

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { Department, Agent, CompanySettings } from "../types";
 import { useI18n } from "../i18n";
-import { Building2, BookOpen, LayoutDashboard, ClipboardList, Settings } from "lucide-react";
+import { Building2, Send, BookOpen, LayoutDashboard, ClipboardList, FolderCheck, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type View = "office" | "dashboard" | "tasks" | "skills" | "settings";
+type View = "office" | "directives" | "dashboard" | "tasks" | "deliverables" | "skills" | "settings";
 
 interface SidebarProps {
   currentView: View;
@@ -19,7 +19,9 @@ const NAV_ITEMS: { view: View; icon: LucideIcon }[] = [
   { view: "office", icon: Building2 },
   { view: "skills", icon: BookOpen },
   { view: "dashboard", icon: LayoutDashboard },
+  { view: "directives", icon: Send },
   { view: "tasks", icon: ClipboardList },
+  { view: "deliverables", icon: FolderCheck },
   { view: "settings", icon: Settings },
 ];
 
@@ -42,9 +44,11 @@ export default function Sidebar({
 
   const navLabels: Record<View, string> = {
     office: tr("오피스", "Office", "オフィス", "办公室"),
+    directives: tr("업무지시", "Directives", "業務指示", "工作指示"),
     skills: tr("도서관", "Library", "ライブラリ", "文档库"),
     dashboard: tr("대시보드", "Dashboard", "ダッシュボード", "仪表盘"),
     tasks: tr("업무 관리", "Tasks", "タスク管理", "任务管理"),
+    deliverables: tr("결과물", "Deliverables", "成果物", "交付物"),
     settings: tr("설정", "Settings", "設定", "设置"),
   };
 

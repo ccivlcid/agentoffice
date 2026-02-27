@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useDraggable } from "@dnd-kit/core";
 import type { Task, Agent, Department, TaskStatus, SubTask } from "../../types";
 import AgentAvatar from "../AgentAvatar";
 import AgentSelect from "../AgentSelect";
@@ -40,6 +41,8 @@ export interface TaskCardProps {
   onDiscardTask?: (id: string) => void;
   onHideTask?: (id: string) => void;
   onUnhideTask?: (id: string) => void;
+  expanded?: boolean;
+  onToggleExpand?: (id: string) => void;
 }
 
 const SUBTASK_ICON: Record<string, React.ReactNode> = {
@@ -97,10 +100,17 @@ export function TaskCard({
   onOpenMeetingMinutes,
   onHideTask,
   onUnhideTask,
+  expanded: expandedProp,
+  onToggleExpand,
 }: TaskCardProps) {
   const { t, localeTag, locale } = useI18n();
   const { theme } = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [expandedLocal, setExpandedLocal] = useState(false);
+  const expanded = expandedProp ?? expandedLocal;
+  const toggleExpand = () => {
+    if (onToggleExpand) onToggleExpand(task.id);
+    else setExpandedLocal((v) => !v);
+  };
   const [showDiff, setShowDiff] = useState(false);
   const [showSubtasks, setShowSubtasks] = useState(false);
   const [agentWarning, setAgentWarning] = useState(false);
@@ -121,17 +131,27 @@ export function TaskCard({
   const colors = POSTIT_COLORS[task.task_type] ?? POSTIT_COLORS.general;
   const rotation = useMemo(() => stickyRotation(task.id), [task.id]);
 
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+    data: { taskId: task.id, currentStatus: task.status },
+  });
+
   const cardStyle: React.CSSProperties = {
     backgroundColor: isDark ? colors.dark : colors.light,
-    transform: `rotate(${rotation}deg)`,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${rotation}deg)`
+      : `rotate(${rotation}deg)`,
     "--postit-fold-color": isDark ? colors.foldDark : colors.foldLight,
     "--postit-fold-bg": "var(--th-panel-bg)",
   } as React.CSSProperties;
 
   return (
     <div
-      className={`postit-card group relative ${isHiddenTask ? "opacity-70" : ""} ${expanded ? "" : "postit-card--collapsed"}`}
+      ref={setNodeRef}
+      className={`postit-card group relative cursor-grab active:cursor-grabbing ${isDragging ? "postit-card--dragging" : ""} ${isHiddenTask ? "opacity-70" : ""} ${expanded ? "" : "postit-card--collapsed"}`}
       style={cardStyle}
+      {...listeners}
+      {...attributes}
     >
       {/* Tape */}
       <div className="postit-tape" style={{ backgroundColor: isDark ? colors.tapeDark : colors.tapeLight }} />
@@ -139,7 +159,7 @@ export function TaskCard({
       {/* Title row */}
       <div className="flex items-start justify-between gap-2">
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={toggleExpand}
           className="flex-1 min-w-0 text-left text-sm font-semibold leading-snug postit-title flex items-center gap-1.5"
           title={expanded ? t({ ko: "접기", en: "Collapse" }) : t({ ko: "펼치기", en: "Expand" })}
         >

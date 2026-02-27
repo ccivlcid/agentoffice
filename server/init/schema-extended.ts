@@ -195,5 +195,51 @@ CREATE TABLE IF NOT EXISTS project_agents (
 );
 CREATE INDEX IF NOT EXISTS idx_project_agents_project ON project_agents(project_id);
 CREATE INDEX IF NOT EXISTS idx_project_agents_agent ON project_agents(agent_id);
+
+CREATE TABLE IF NOT EXISTS test_runs (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  command TEXT NOT NULL,
+  cwd TEXT,
+  status TEXT NOT NULL DEFAULT 'running' CHECK(status IN ('running','passed','failed','error')),
+  started_at INTEGER NOT NULL,
+  finished_at INTEGER,
+  duration INTEGER,
+  total INTEGER NOT NULL DEFAULT 0,
+  passed INTEGER NOT NULL DEFAULT 0,
+  failed INTEGER NOT NULL DEFAULT 0,
+  skipped INTEGER NOT NULL DEFAULT 0,
+  output TEXT,
+  created_at INTEGER DEFAULT (unixepoch()*1000)
+);
+CREATE INDEX IF NOT EXISTS idx_test_runs_task ON test_runs(task_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS preview_sessions (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  command TEXT NOT NULL,
+  pid INTEGER,
+  port INTEGER,
+  url TEXT,
+  status TEXT NOT NULL DEFAULT 'starting' CHECK(status IN ('starting','running','stopped','error')),
+  started_at INTEGER NOT NULL,
+  stopped_at INTEGER,
+  created_at INTEGER DEFAULT (unixepoch()*1000)
+);
+CREATE INDEX IF NOT EXISTS idx_preview_sessions_task ON preview_sessions(task_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS test_checklists (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  category TEXT,
+  text TEXT NOT NULL,
+  checked INTEGER NOT NULL DEFAULT 0,
+  checked_at INTEGER,
+  note TEXT,
+  auto_generated INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER DEFAULT (unixepoch()*1000)
+);
+CREATE INDEX IF NOT EXISTS idx_test_checklists_task ON test_checklists(task_id, sort_order ASC);
 `);
 }

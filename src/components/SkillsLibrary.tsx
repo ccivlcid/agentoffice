@@ -71,6 +71,7 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
 
   const cs = useCustomSkills();
   const [guideOpen, setGuideOpen] = useState(true);
+  const [skillHistoryOpen, setSkillHistoryOpen] = useState(true);
 
   // Merge custom skills into the filtered list as CategorizedSkill-compatible objects
   const customAsCategorized = useMemo(
@@ -185,7 +186,7 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
               <ul className="list-disc list-inside space-y-1.5 text-slate-400">
                 <li>{t({ ko: "검색/카테고리로 스킬을 필터링한 뒤, 스킬 카드의 「학습」으로 에이전트(CLI)에게 해당 스킬을 부여할 수 있습니다.", en: "Filter skills by search or category, then use \"Learn\" on a skill card to assign that skill to an agent (CLI)." })}</li>
                 <li>{t({ ko: "「스킬 업로드」로 새 스킬을 추가하고, 「스킬 등록」으로 기존 스킬을 커스텀으로 등록할 수 있습니다.", en: "Use \"Upload\" to add a new skill and \"Register\" to register an existing skill as custom." })}</li>
-                <li>{t({ ko: "학습 메모리에서 CLI별로 어떤 스킬을 학습했는지 확인할 수 있습니다.", en: "Learning Memory shows which skills each CLI has learned." })}</li>
+                <li>{t({ ko: "에이전트 학습 스킬에서 CLI별로 어떤 스킬을 학습했는지 확인할 수 있습니다.", en: "Agent Learned Skills shows which skills each CLI has learned." })}</li>
               </ul>
               <p className="text-slate-500 text-xs mt-2">
                 {t({ ko: "스킬을 학습한 에이전트는 해당 스킬의 지침에 따라 작업을 수행할 수 있습니다.", en: "Agents that have learned a skill can perform tasks according to that skill's instructions." })}
@@ -304,21 +305,31 @@ export default function SkillsLibrary({ agents }: SkillsLibraryProps) {
 })}`}
       </div>
 
-      <div className="rounded-xl border border-slate-700/60 bg-slate-900/50 p-3">
-        <div className="mb-2 flex items-center justify-between">
+      <div className="rounded-xl border border-slate-700/60 bg-slate-900/50 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setSkillHistoryOpen((v) => !v)}
+          className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-700/30 transition-colors"
+          aria-expanded={skillHistoryOpen}
+        >
           <div className="text-sm font-semibold text-slate-100">
-            {t({ ko: "학습 메모리", en: "Learning Memory" })}
+            {t({ ko: "에이전트 학습 스킬", en: "Agent Learned Skills" })}
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-[11px] text-slate-500 ml-auto mr-2">
             {t({ ko: "CLI별 스킬 이력", en: "Per-CLI skill history" })}
           </div>
-        </div>
-        <SkillHistoryPanel
-          agents={agents}
-          refreshToken={historyRefreshToken}
-          onLearningDataChanged={() => setHistoryRefreshToken((prev) => prev + 1)}
-          className="h-[380px]"
-        />
+          {skillHistoryOpen ? <ChevronDown width={18} height={18} className="text-slate-400" /> : <ChevronRight width={18} height={18} className="text-slate-400" />}
+        </button>
+        {skillHistoryOpen && (
+          <div className="px-4 pb-4 pt-0 border-t border-slate-700/50">
+            <SkillHistoryPanel
+              agents={agents}
+              refreshToken={historyRefreshToken}
+              onLearningDataChanged={() => setHistoryRefreshToken((prev) => prev + 1)}
+              className="h-[380px]"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

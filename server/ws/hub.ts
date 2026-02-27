@@ -23,6 +23,7 @@ export function createWsHub(nowMs: () => number): {
   const BATCH_INTERVAL: Record<string, number> = {
     cli_output: 250,       // highest frequency (process stdout/stderr streams)
     subtask_update: 150,   // moderate frequency
+    test_output: 250,      // test runner stdout/stderr
   };
   const MAX_BATCH_QUEUE = 60;
   const batches = new Map<string, { queue: unknown[]; timer: ReturnType<typeof setTimeout> }>();

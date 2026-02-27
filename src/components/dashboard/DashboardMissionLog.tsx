@@ -1,4 +1,4 @@
-import { Radio, FileText } from 'lucide-react';
+import { Radio, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Agent, Task } from '../../types';
 import AgentAvatar from '../AgentAvatar';
 import { STATUS_LABELS, taskStatusLabel, timeAgo } from './dashboardHelpers';
@@ -25,6 +25,8 @@ interface DashboardMissionLogProps {
   t: TFunction;
   /** 클릭 시 업무 보드로 이동 (기획서 §3.2 Phase 4) */
   onNavigateToTasks?: () => void;
+  folded?: boolean;
+  onToggleFold?: () => void;
 }
 
 export default function DashboardMissionLog({
@@ -37,29 +39,48 @@ export default function DashboardMissionLog({
   locale,
   t,
   onNavigateToTasks,
+  folded = false,
+  onToggleFold,
 }: DashboardMissionLogProps) {
+  const toggleLabel = folded
+    ? t({ ko: '미션 로그 펼치기', en: 'Expand mission log' })
+    : t({ ko: '미션 로그 접기', en: 'Collapse mission log' });
+
   return (
     <div className="game-panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider" style={{ color: 'var(--th-text-primary)' }}>
+        <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider" style={{ color: 'var(--th-text-primary)' }}>
           <span
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/15"
             style={{ boxShadow: '0 0 8px rgba(139,92,246,0.2)' }}
           >
             <Radio width={14} height={14} className="text-violet-400" />
           </span>
-          {t({ ko: '미션 로그', en: 'MISSION LOG' })}
+          <span>{t({ ko: '미션 로그', en: 'MISSION LOG' })}</span>
           <span className="ml-2 text-[9px] font-medium normal-case tracking-normal" style={{ color: 'var(--th-text-muted)' }}>
             {t({ ko: '최근 활동', en: 'Recent activity' })}
           </span>
-        </h2>
-        <span className="flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold" style={{ borderColor: 'var(--th-border)', background: 'var(--th-bg-surface)', color: 'var(--th-text-secondary)' }}>
-          {t({ ko: '유휴', en: 'Idle' })} {numberFormatter.format(idleAgents)}
-          {t({ ko: '명', en: '' })}
-        </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-bold" style={{ borderColor: 'var(--th-border)', background: 'var(--th-bg-surface)', color: 'var(--th-text-secondary)' }}>
+            {t({ ko: '유휴', en: 'Idle' })} {numberFormatter.format(idleAgents)}
+            {t({ ko: '명', en: '' })}
+          </span>
+          {onToggleFold && (
+            <button
+              type="button"
+              onClick={onToggleFold}
+              className="rounded-lg p-1.5 transition hover:bg-white/10"
+              aria-label={toggleLabel}
+              title={toggleLabel}
+            >
+              {folded ? <ChevronDown width={16} height={16} /> : <ChevronUp width={16} height={16} />}
+            </button>
+          )}
+        </div>
       </div>
 
-      {recentTasks.length === 0 ? (
+      {!folded && (recentTasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-10 text-sm" style={{ color: 'var(--th-text-muted)' }} role="status" aria-label={t({ ko: '최근 미션 로그 없음', en: 'No recent mission logs' })}>
           <Radio width={32} height={32} className="opacity-30 text-slate-400" aria-hidden />
           {t({ ko: '로그 없음', en: 'No logs' })}
@@ -125,10 +146,9 @@ export default function DashboardMissionLog({
             );
           })}
         </div>
-      )}
+      ))}
 
-      {/* 더 보기: 업무 보드 전체 보기 (기획서 §3.2 Phase 4) */}
-      {onNavigateToTasks && (
+      {!folded && onNavigateToTasks && (
         <div className="mt-4 flex justify-end border-t border-white/[0.06] pt-3">
           <button
             type="button"

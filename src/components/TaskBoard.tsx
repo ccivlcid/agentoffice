@@ -1,22 +1,50 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { Task, Agent, Department, SubTask } from '../types';
+import { DndContext, DragOverlay, useDroppable, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
+import type { Task, Agent, Department, SubTask, TaskStatus } from '../types';
 import ProjectManagerModal from './ProjectManagerModal';
 import { bulkHideTasks } from '../api';
 import {
   useI18n,
   isHideableStatus,
   taskStatusLabel,
+  taskTypeLabel,
   COLUMNS,
+  POSTIT_COLORS,
+  stickyRotation,
+  priorityColor,
+  TASK_TYPE_OPTIONS,
   type HideableStatus,
+  type ColumnDef,
 } from './task-board/taskBoardHelpers';
+import { useTheme } from '../ThemeContext';
 import { CreateModal } from './task-board/CreateModal';
 import { TaskCard } from './task-board/TaskCard';
-import { FilterBar } from './task-board/FilterBar';
 import { BulkHideModal } from './task-board/BulkHideModal';
-import { EyeOff, FolderKanban, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { EyeOff, FolderKanban, Plus, Search, ChevronLeft, ChevronRight, Inbox } from 'lucide-react';
 import { STATUS_ICONS } from '../constants/icons';
 
+/* ── Droppable Column body ── */
+function DroppableColumn({ status, accent, folded, children }: { status: string; accent: string; folded: boolean; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${status}`,
+    data: { status },
+    disabled: folded,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col gap-2.5 overflow-hidden transition-all duration-300 sm:flex-1 ${
+        folded ? 'max-h-0 p-0 opacity-0 sm:min-h-0' : 'p-2.5 sm:overflow-y-auto opacity-100'
+      } ${isOver && !folded ? 'taskboard-column--drag-over' : ''}`}
+      style={isOver && !folded ? { '--column-accent': accent } as React.CSSProperties : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
 const COLUMN_FOLD_STORAGE_KEY = 'climpire.taskboard.columnsFolded';
+const EXPANDED_TASKS_STORAGE_KEY = 'climpire.taskboard.expandedTasks';
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -46,15 +74,97 @@ interface TaskBoardProps {
   onDiscardTask?: (id: string) => void;
 }
 
+/* ── Column header with accent bar ── */
+function ColumnHeader({ col, count, folded, isDark, onToggle, t }: {
+  col: ColumnDef; count: number; folded: boolean; isDark: boolean;
+  onToggle: () => void; t: (m: Record<string, string>) => string;
+}) {
+  const Icon = STATUS_ICONS[col.status as keyof typeof STATUS_ICONS];
+  const gradient = isDark
+    ? `linear-gradient(135deg, ${col.gradientFrom}, ${col.gradientTo})`
+    : `linear-gradient(135deg, ${col.gradientFromLight}, ${col.gradientToLight})`;
+  const accent = isDark ? col.accent : col.accentLight;
+
+  if (folded) {
+    return (
+      <>
+        <div className="taskboard-column-accent" style={{ background: gradient }} />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="taskboard-column-header taskboard-column-header--folded flex flex-col items-center border-b-0"
+          title={`${taskStatusLabel(col.status, t)} · ${t({ ko: '펼치기', en: 'Expand' })}`}
+        >
+          {/* Count badge at top */}
+          <span
+            className="taskboard-column-count mb-2"
+            style={{ backgroundColor: accent + '20', color: accent }}
+          >
+            {count}
+          </span>
+
+          {/* Vertical status label */}
+          <div className="flex flex-col items-center gap-1.5 flex-1 min-h-0">
+            {Icon && <Icon width={14} height={14} style={{ color: accent }} className="flex-shrink-0" />}
+            <span
+              className="taskboard-column-vlabel"
+              style={{ color: accent }}
+            >
+              {taskStatusLabel(col.status, t)}
+            </span>
+          </div>
+
+          {/* Expand hint */}
+          <ChevronRight width={12} height={12} className="mt-2 flex-shrink-0 taskboard-column-expand-hint" style={{ color: 'var(--th-text-muted)' }} />
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="taskboard-column-accent" style={{ background: gradient }} />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="taskboard-column-header flex w-full items-center justify-between"
+        title={t({ ko: '접기', en: 'Collapse' })}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {Icon && <Icon width={15} height={15} style={{ color: accent }} className="flex-shrink-0" />}
+          <span className="text-[13px] font-semibold truncate" style={{ color: 'var(--th-text-heading)' }}>
+            {taskStatusLabel(col.status, t)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span
+            className="taskboard-column-count"
+            style={{ backgroundColor: accent + '20', color: accent }}
+          >
+            {count}
+          </span>
+          <ChevronLeft width={12} height={12} style={{ color: 'var(--th-text-muted)' }} />
+        </div>
+      </button>
+    </>
+  );
+}
+
 export function TaskBoard({
   tasks, agents, departments, subtasks, onCreateTask, onUpdateTask, onDeleteTask,
   onAssignTask, onRunTask, onStopTask, onPauseTask, onResumeTask,
   onOpenTerminal, onOpenMeetingMinutes, onMergeTask, onDiscardTask,
 }: TaskBoardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
   const [showCreate, setShowCreate] = useState(false);
   const [showProjectManager, setShowProjectManager] = useState(false);
   const [showBulkHideModal, setShowBulkHideModal] = useState(false);
+  const [dragActiveTask, setDragActiveTask] = useState<Task | null>(null);
   const [filterDept, setFilterDept] = useState('');
   const [filterType, setFilterType] = useState('');
   const [search, setSearch] = useState('');
@@ -66,20 +176,35 @@ export function TaskBoard({
         const parsed = JSON.parse(raw) as Record<string, boolean>;
         if (parsed && typeof parsed === 'object') return parsed;
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
     return {};
   });
+
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(EXPANDED_TASKS_STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return new Set(arr as string[]);
+      }
+    } catch { /* ignore */ }
+    return new Set();
+  });
+
+  const toggleTaskExpand = useCallback((taskId: string) => {
+    setExpandedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      try { localStorage.setItem(EXPANDED_TASKS_STORAGE_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const toggleColumnFold = useCallback((status: string) => {
     setColumnFolded((prev) => {
       const next = { ...prev, [status]: !prev[status] };
-      try {
-        localStorage.setItem(COLUMN_FOLD_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // ignore
-      }
+      try { localStorage.setItem(COLUMN_FOLD_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
   }, []);
@@ -120,6 +245,25 @@ export function TaskBoard({
     return map;
   }, [subtasks]);
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const taskId = event.active.id as string;
+    const found = tasks.find((t) => t.id === taskId);
+    setDragActiveTask(found ?? null);
+  }, [tasks]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setDragActiveTask(null);
+    const { active, over } = event;
+    if (!over) return;
+    const taskId = active.id as string;
+    const currentStatus = active.data.current?.currentStatus as TaskStatus | undefined;
+    const targetStatus = over.data.current?.status as TaskStatus | undefined;
+    if (!targetStatus || currentStatus === targetStatus) return;
+    onUpdateTask(taskId, { status: targetStatus });
+  }, [onUpdateTask]);
+
+  const handleDragCancel = useCallback(() => setDragActiveTask(null), []);
+
   const activeFilterCount = [filterDept, filterType, search].filter(Boolean).length;
   const hiddenTaskCount = useMemo(() => {
     let count = 0;
@@ -130,111 +274,190 @@ export function TaskBoard({
   }, [tasks, hiddenTaskIds]);
 
   return (
-    <div className="taskboard-shell flex h-full flex-col gap-4 bg-slate-950 p-3 sm:p-4">
-      {/* Top bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-bold text-white">{t({ ko: '업무 보드', en: 'Task Board' })}</h1>
-        <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-400">
-          {t({ ko: '총', en: 'Total' })} {filteredTasks.length}
-          {t({ ko: '개', en: '' })}
-          {activeFilterCount > 0 && ` (${t({ ko: '필터', en: 'filters' })} ${activeFilterCount}${t({ ko: '개 적용', en: ' applied' })})`}
+    <div className="taskboard-shell flex h-full flex-col gap-3 p-3 sm:p-4">
+      {/* ── Toolbar Row 1: Title + Search + Filters ── */}
+      <div className="taskboard-toolbar">
+        <h1 className="text-lg font-bold mr-2" style={{ color: 'var(--th-text-heading)', fontFamily: 'var(--th-font-display)' }}>
+          {t({ ko: '업무 보드', en: 'Task Board' })}
+        </h1>
+        <span
+          className="rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-3"
+          style={{ backgroundColor: 'var(--th-glass-bg)', color: 'var(--th-text-muted)', border: '1px solid var(--th-card-border)' }}
+        >
+          {filteredTasks.length}{t({ ko: '개', en: '' })}
         </span>
-        <div className="ml-auto flex items-center gap-2">
-          {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterDept(''); setFilterType(''); setSearch(''); }}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800 hover:text-white">
-              {t({ ko: '필터 초기화', en: 'Reset Filters' })}
-            </button>
-          )}
-          <button onClick={() => setShowAllTasks((prev) => !prev)}
-            className={`rounded-lg border px-3 py-1.5 text-xs transition ${showAllTasks ? 'border-cyan-600 bg-cyan-900/40 text-cyan-100 hover:bg-cyan-900/60' : 'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'}`}
-            title={showAllTasks ? t({ ko: '진행중 보기로 전환 (숨김 제외)', en: 'Switch to active view (exclude hidden)' }) : t({ ko: '모두보기로 전환 (숨김 포함)', en: 'Switch to all view (include hidden)' })}>
-            <span className={showAllTasks ? 'text-slate-400' : 'text-emerald-200'}>{t({ ko: '진행중', en: 'Active' })}</span>
-            <span className="mx-1 text-slate-500">/</span>
-            <span className={showAllTasks ? 'text-cyan-100' : 'text-slate-500'}>{t({ ko: '모두보기', en: 'All' })}</span>
-            <span className="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-300">{hiddenTaskCount}</span>
-          </button>
-          <button onClick={() => setShowBulkHideModal(true)}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            title={t({ ko: '완료/보류/취소 상태 업무 숨기기', en: 'Hide done/pending/cancelled tasks' })}>
-            <EyeOff width={14} height={14} /> {t({ ko: '숨김', en: 'Hide' })}
-          </button>
-          <button onClick={() => setShowProjectManager(true)}
-            className="taskboard-project-manage-btn rounded-lg border px-3 py-1.5 text-xs font-semibold transition">
-            <FolderKanban width={14} height={14} className="inline -mt-0.5 mr-1" /> {t({ ko: '프로젝트 관리', en: 'Project Manager' })}
-          </button>
-          <button onClick={() => setShowCreate(true)}
-            className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow transition hover:bg-blue-500 active:scale-95">
-            <Plus width={14} height={14} className="inline -mt-0.5 mr-0.5" /> {t({ ko: '새 업무', en: 'New Task' })}
-          </button>
+
+        {/* Search */}
+        <div className="taskboard-toolbar-search relative flex items-center min-w-[140px] flex-1 sm:min-w-[180px] sm:max-w-[260px]">
+          <Search className="absolute left-2.5 pointer-events-none" width={14} height={14} style={{ color: 'var(--th-text-muted)' }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t({ ko: '업무 검색...', en: 'Search tasks...' })}
+            className="w-full bg-transparent py-1.5 pl-8 pr-3 text-[13px] outline-none placeholder:opacity-50"
+            style={{ color: 'var(--th-text-primary)' }}
+          />
         </div>
+
+        {/* Department filter */}
+        <select
+          value={filterDept}
+          onChange={(e) => setFilterDept(e.target.value)}
+          className="taskboard-toolbar-select"
+        >
+          <option value="">{t({ ko: '전체 부서', en: 'All Depts' })}</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {locale === 'ko' ? d.name_ko : d.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Type filter */}
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="taskboard-toolbar-select"
+        >
+          <option value="">{t({ ko: '전체 유형', en: 'All Types' })}</option>
+          {TASK_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {taskTypeLabel(opt.value, t)}
+            </option>
+          ))}
+        </select>
+
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() => { setFilterDept(''); setFilterType(''); setSearch(''); }}
+            className="taskboard-toolbar-btn text-[11px]"
+            style={{ borderColor: 'var(--th-focus-ring)', color: 'var(--th-focus-ring)' }}
+          >
+            {t({ ko: '초기화', en: 'Reset' })}
+          </button>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1 hidden sm:block" />
+
+        {/* Action buttons */}
+        <button
+          onClick={() => setShowAllTasks((prev) => !prev)}
+          className={`taskboard-toolbar-btn ${showAllTasks ? 'font-semibold' : ''}`}
+          style={showAllTasks ? { borderColor: 'var(--th-focus-ring)', color: 'var(--th-focus-ring)' } : undefined}
+          title={showAllTasks ? t({ ko: '진행중 보기', en: 'Active view' }) : t({ ko: '모두 보기', en: 'All view' })}
+        >
+          {showAllTasks ? t({ ko: '모두', en: 'All' }) : t({ ko: '진행중', en: 'Active' })}
+          <span
+            className="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+            style={{ backgroundColor: 'var(--th-glass-bg)' }}
+          >
+            {hiddenTaskCount}
+          </span>
+        </button>
+
+        <button onClick={() => setShowBulkHideModal(true)} className="taskboard-toolbar-btn"
+          title={t({ ko: '완료/보류/취소 업무 숨김', en: 'Hide done/pending/cancelled' })}>
+          <EyeOff width={13} height={13} /> {t({ ko: '숨김', en: 'Hide' })}
+        </button>
+
+        <button onClick={() => setShowProjectManager(true)} className="taskboard-project-manage-btn taskboard-toolbar-btn font-semibold">
+          <FolderKanban width={13} height={13} /> {t({ ko: '프로젝트', en: 'Projects' })}
+        </button>
+
+        <button
+          onClick={() => setShowCreate(true)}
+          className="taskboard-toolbar-btn font-semibold"
+          style={{ backgroundColor: '#2563eb', borderColor: '#2563eb', color: '#fff' }}
+        >
+          <Plus width={14} height={14} /> {t({ ko: '새 업무', en: 'New Task' })}
+        </button>
       </div>
 
-      {/* Filter bar */}
-      <FilterBar departments={departments} filterDept={filterDept}
-        filterType={filterType} search={search} onFilterDept={setFilterDept}
-        onFilterType={setFilterType} onSearch={setSearch} />
+      {/* ── Kanban Board ── */}
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-2 sm:flex-row sm:gap-3 sm:overflow-x-auto sm:overflow-y-hidden">
+          {COLUMNS.map((col) => {
+            const colTasks = tasksByStatus[col.status] ?? [];
+            const folded = !!columnFolded[col.status];
+            const accent = isDark ? col.accent : col.accentLight;
 
-      {/* Kanban board — 스티커 메모처럼 컬럼 접기/펼치기 */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-2 sm:flex-row sm:overflow-x-auto sm:overflow-y-hidden">
-        {COLUMNS.map((col) => {
-          const colTasks = tasksByStatus[col.status] ?? [];
-          const folded = columnFolded[col.status];
-          return (
-            <div
-              key={col.status}
-              className={`taskboard-column flex w-full flex-col rounded-xl border shadow-md transition-all duration-300 sm:flex-shrink-0 ${col.borderColor} bg-slate-900 ${
-                folded ? 'sm:w-14 sm:min-w-[3.5rem]' : 'sm:w-72'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => toggleColumnFold(col.status)}
-                className={`flex w-full items-center justify-between rounded-t-xl ${col.headerBg} px-3.5 py-2.5 text-left transition hover:opacity-90 ${
-                  folded ? 'flex-col gap-1.5 py-3 sm:flex-col sm:px-2' : ''
-                }`}
-                title={folded ? `${taskStatusLabel(col.status, t)} · ${t({ ko: '펼치기', en: 'Expand' })}` : t({ ko: '접기', en: 'Collapse' })}
-              >
-                <div className={`flex items-center gap-2 ${folded ? 'flex-col' : ''}`}>
-                  <span className={`h-2 w-2 flex-shrink-0 rounded-full ${col.dotColor}`} />
-                  <span className="text-sm font-semibold text-white inline-flex items-center gap-1.5">
-                    {(() => { const I = STATUS_ICONS[col.status as keyof typeof STATUS_ICONS]; return I ? <I width={14} height={14} className="flex-shrink-0" /> : null; })()}
-                    {folded ? null : taskStatusLabel(col.status, t)}
-                  </span>
-                </div>
-                <span className="rounded-full bg-black/30 px-2 py-0.5 text-xs font-bold text-white/80 flex items-center gap-1">
-                  {folded ? <ChevronUp width={12} height={12} className="sm:rotate-90" aria-hidden /> : <ChevronDown width={12} height={12} aria-hidden />}
-                  {colTasks.length}
-                </span>
-              </button>
+            return (
               <div
-                className={`flex flex-col gap-2.5 overflow-hidden transition-all duration-300 sm:flex-1 ${
-                  folded ? 'max-h-0 p-0 opacity-0 sm:min-h-0' : 'p-2.5 sm:overflow-y-auto opacity-100'
+                key={col.status}
+                className={`taskboard-column flex w-full flex-col transition-all duration-300 sm:flex-shrink-0 ${
+                  folded ? 'sm:w-11 sm:min-w-[2.75rem]' : 'sm:w-72'
                 }`}
               >
-                {colTasks.length === 0 ? (
-                  <div className="flex min-h-24 items-center justify-center py-8 text-xs text-slate-600 sm:flex-1">
-                    {t({ ko: '업무 없음', en: 'No tasks' })}
-                  </div>
-                ) : (
-                  colTasks.map((task) => (
-                    <TaskCard key={task.id} task={task} agents={agents} departments={departments}
-                      taskSubtasks={subtasksByTask[task.id] ?? []} isHiddenTask={hiddenTaskIds.has(task.id)}
-                      onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onAssignTask={onAssignTask}
-                      onRunTask={onRunTask} onStopTask={onStopTask} onPauseTask={onPauseTask}
-                      onResumeTask={onResumeTask} onOpenTerminal={onOpenTerminal}
-                      onOpenMeetingMinutes={onOpenMeetingMinutes}
-                      onMergeTask={onMergeTask} onDiscardTask={onDiscardTask}
-                      onHideTask={hideTask} onUnhideTask={unhideTask}
-                    />
-                  ))
-                )}
+                <ColumnHeader
+                  col={col}
+                  count={colTasks.length}
+                  folded={folded}
+                  isDark={isDark}
+                  onToggle={() => toggleColumnFold(col.status)}
+                  t={t}
+                />
+                <DroppableColumn status={col.status} accent={accent} folded={folded}>
+                  {colTasks.length === 0 ? (
+                    <div className="flex min-h-20 flex-col items-center justify-center gap-1.5 py-6 sm:flex-1">
+                      <Inbox width={20} height={20} style={{ color: 'var(--th-text-muted)', opacity: 0.4 }} />
+                      <span className="text-xs" style={{ color: 'var(--th-text-muted)', opacity: 0.6 }}>
+                        {t({ ko: '업무 없음', en: 'No tasks' })}
+                      </span>
+                    </div>
+                  ) : (
+                    colTasks.map((task) => (
+                      <TaskCard key={task.id} task={task} agents={agents} departments={departments}
+                        taskSubtasks={subtasksByTask[task.id] ?? []} isHiddenTask={hiddenTaskIds.has(task.id)}
+                        expanded={expandedTaskIds.has(task.id)} onToggleExpand={toggleTaskExpand}
+                        onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onAssignTask={onAssignTask}
+                        onRunTask={onRunTask} onStopTask={onStopTask} onPauseTask={onPauseTask}
+                        onResumeTask={onResumeTask} onOpenTerminal={onOpenTerminal}
+                        onOpenMeetingMinutes={onOpenMeetingMinutes}
+                        onMergeTask={onMergeTask} onDiscardTask={onDiscardTask}
+                        onHideTask={hideTask} onUnhideTask={unhideTask}
+                      />
+                    ))
+                  )}
+                </DroppableColumn>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
+        {/* Drag overlay */}
+        <DragOverlay dropAnimation={null}>
+          {dragActiveTask && (() => {
+            const colors = POSTIT_COLORS[dragActiveTask.task_type] ?? POSTIT_COLORS.general;
+            const rotation = stickyRotation(dragActiveTask.id);
+            return (
+              <div
+                className="postit-card postit-card--collapsed postit-card-overlay"
+                style={{
+                  backgroundColor: isDark ? colors.dark : colors.light,
+                  transform: `rotate(${rotation}deg) scale(1.05)`,
+                  width: '17rem',
+                  '--postit-fold-color': isDark ? colors.foldDark : colors.foldLight,
+                  '--postit-fold-bg': 'var(--th-panel-bg)',
+                } as React.CSSProperties}
+              >
+                <div className="postit-tape" style={{ backgroundColor: isDark ? colors.tapeDark : colors.tapeLight }} />
+                <div className="flex items-start justify-between gap-2">
+                  <span className="flex-1 min-w-0 text-sm font-semibold leading-snug postit-title truncate">{dragActiveTask.title}</span>
+                  <span className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${priorityColor(dragActiveTask.priority)}`} />
+                </div>
+                <div className="mt-1.5 flex items-center gap-2 text-[11px] postit-text-muted">
+                  <span>{taskStatusLabel(dragActiveTask.status, t)}</span>
+                </div>
+                <div className="postit-fold" />
+              </div>
+            );
+          })()}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Modals */}
       {showCreate && (
         <CreateModal agents={agents} departments={departments} onClose={() => setShowCreate(false)}
           onCreate={onCreateTask} onAssign={onAssignTask} />

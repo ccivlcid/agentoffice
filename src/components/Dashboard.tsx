@@ -21,7 +21,7 @@ interface DashboardProps {
   onOpenAgentManager?: () => void;
 }
 
-type BlocksFolded = { hud?: boolean; performance?: boolean };
+type BlocksFolded = { hud?: boolean; performance?: boolean; deptProgress?: boolean; missionLog?: boolean };
 
 function readBlocksFolded(): BlocksFolded {
   try {
@@ -61,6 +61,8 @@ export default function Dashboard({
   const [blocksFolded, setBlocksFolded] = useState<BlocksFolded>(readBlocksFolded);
   const hudFolded = blocksFolded.hud ?? false;
   const performanceFolded = blocksFolded.performance ?? false;
+  const deptProgressFolded = blocksFolded.deptProgress ?? false;
+  const missionLogFolded = blocksFolded.missionLog ?? false;
 
   const setBlockFolded = useCallback(<K extends keyof BlocksFolded>(key: K, value: boolean) => {
     setBlocksFolded((prev) => {
@@ -72,6 +74,8 @@ export default function Dashboard({
 
   const setHudFolded = useCallback((v: boolean) => setBlockFolded("hud", v), [setBlockFolded]);
   const setPerformanceFolded = useCallback((v: boolean) => setBlockFolded("performance", v), [setBlockFolded]);
+  const setDeptProgressFolded = useCallback((v: boolean) => setBlockFolded("deptProgress", v), [setBlockFolded]);
+  const setMissionLogFolded = useCallback((v: boolean) => setBlockFolded("missionLog", v), [setBlockFolded]);
 
   const totalTasks = stats?.tasks?.total ?? tasks.length;
   const completedTasks = stats?.tasks?.done ?? tasks.filter((t) => t.status === "done").length;
@@ -229,6 +233,8 @@ export default function Dashboard({
         numberFormatter={numberFormatter}
         t={t}
         onSelectDepartment={onSelectDepartment}
+        folded={deptProgressFolded}
+        onToggleFold={() => setDeptProgressFolded(!deptProgressFolded)}
       />
 
       <DashboardMissionLog
@@ -241,6 +247,8 @@ export default function Dashboard({
         locale={locale}
         t={t}
         onNavigateToTasks={onPrimaryCtaClick}
+        folded={missionLogFolded}
+        onToggleFold={() => setMissionLogFolded(!missionLogFolded)}
       />
 
       <DashboardCliUsage tasks={tasks} language={locale} t={t} />

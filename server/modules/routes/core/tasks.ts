@@ -18,6 +18,8 @@ import { registerTaskSubtasks } from "./tasks-subtasks.ts";
 import { registerTaskRun } from "./tasks-run.ts";
 import { registerTaskGitInfo } from "./tasks-git-info.ts";
 import { registerTaskStop } from "./tasks-stop.ts";
+import { registerTaskTimeline } from "./tasks-timeline.ts";
+import { registerTaskClone } from "./tasks-clone.ts";
 
 export function registerCoreTasks(ctx: RuntimeContext): void {
   registerTaskQueries(ctx);
@@ -26,4 +28,6 @@ export function registerCoreTasks(ctx: RuntimeContext): void {
   registerTaskRun(ctx);
   registerTaskGitInfo(ctx);
   registerTaskStop(ctx);
+  registerTaskTimeline(ctx);
+  registerTaskClone(ctx);
 }
