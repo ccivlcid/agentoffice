@@ -38,6 +38,7 @@ export function registerOpsTaskReports(ctx: RuntimeContext): void {
 
   app.get("/api/task-reports", (_req: any, res: any) => {
     try {
+      // 완료된 모든 태스크 포함. 지시한 팀장(루트 태스크 담당)을 목록에 표시하기 위해 루트 담당자 정보 조인
       const rows = db.prepare(`
         SELECT t.id, t.title, t.description, t.department_id, t.assigned_agent_id,
                t.status, t.project_id, t.project_path, t.source_task_id, t.created_at, t.completed_at,
@@ -46,15 +47,23 @@ export function registerOpsTaskReports(ctx: RuntimeContext): void {
                COALESCE(a.role, '') AS agent_role,
                COALESCE(d.name, '') AS dept_name,
                COALESCE(d.name_ko, '') AS dept_name_ko,
-               COALESCE(p.name, '') AS project_name_db
+               COALESCE(p.name, '') AS project_name_db,
+               COALESCE(NULLIF(TRIM(t.source_task_id), ''), t.id) AS root_task_id,
+               COALESCE(lead_ag.id, a.id) AS leader_agent_id,
+               COALESCE(lead_ag.name, a.name, '') AS leader_agent_name,
+               COALESCE(lead_ag.name_ko, a.name_ko, '') AS leader_agent_name_ko,
+               COALESCE(lead_dept.name, d.name, '') AS leader_dept_name,
+               COALESCE(lead_dept.name_ko, d.name_ko, '') AS leader_dept_name_ko
         FROM tasks t
         LEFT JOIN agents a ON a.id = t.assigned_agent_id
         LEFT JOIN departments d ON d.id = t.department_id
         LEFT JOIN projects p ON p.id = t.project_id
+        LEFT JOIN tasks root ON root.id = COALESCE(NULLIF(TRIM(t.source_task_id), ''), t.id)
+        LEFT JOIN agents lead_ag ON lead_ag.id = root.assigned_agent_id
+        LEFT JOIN departments lead_dept ON lead_dept.id = lead_ag.department_id
         WHERE t.status = 'done'
-          AND (t.source_task_id IS NULL OR TRIM(t.source_task_id) = '')
         ORDER BY t.completed_at DESC
-        LIMIT 50
+        LIMIT 100
       `).all() as Array<Record<string, unknown>>;
 
       const reports = rows.map((row) => ({

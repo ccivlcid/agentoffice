@@ -18,6 +18,13 @@ export interface TaskReportSummary {
   dept_name: string;
   dept_name_ko: string;
   project_name?: string;
+  /** 목록 표시용: 지시한 팀장(루트 태스크 담당) */
+  root_task_id?: string;
+  leader_agent_id?: string | null;
+  leader_agent_name?: string;
+  leader_agent_name_ko?: string;
+  leader_dept_name?: string;
+  leader_dept_name_ko?: string;
 }
 
 export interface TaskReportDocument {

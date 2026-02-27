@@ -160,16 +160,22 @@ export default function ReportHistory({ agents, uiLanguage, onClose }: ReportHis
                     </div>
                     <div className="divide-y divide-slate-700/30">
                       {visibleRows.map((r) => {
-                        const agent = agents.find((a) => a.id === r.assigned_agent_id);
-                        const agentName = uiLanguage === 'ko' ? (r.agent_name_ko || r.agent_name) : r.agent_name;
-                        const deptName = uiLanguage === 'ko' ? (r.dept_name_ko || r.dept_name) : r.dept_name;
+                        // 목록에는 지시한 팀장(루트 태스크 담당) 표시, 없으면 해당 태스크 담당자로 폴백
+                        const leaderId = r.leader_agent_id ?? r.assigned_agent_id;
+                        const leaderAgent = agents.find((a) => a.id === leaderId);
+                        const agentName = uiLanguage === 'ko'
+                          ? (r.leader_agent_name_ko || r.leader_agent_name || r.agent_name_ko || r.agent_name)
+                          : (r.leader_agent_name || r.agent_name);
+                        const deptName = uiLanguage === 'ko'
+                          ? (r.leader_dept_name_ko || r.leader_dept_name || r.dept_name_ko || r.dept_name)
+                          : (r.leader_dept_name || r.dept_name);
                         return (
                           <button
                             key={r.id}
                             onClick={() => handleOpenDetail(r.id)}
                             className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-800/50"
                           >
-                            <AgentAvatar agent={agent} agents={agents} size={34} rounded="xl" />
+                            <AgentAvatar agent={leaderAgent} agents={agents} size={34} rounded="xl" />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-medium text-white">{r.title}</p>
                               <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
