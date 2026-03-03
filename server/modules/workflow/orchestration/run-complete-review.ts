@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { requestMessengerReview } from "../../../gateway/telegram-polling.ts";
 
 export function createRunReviewHelpers(ctx: {
   db: any;
@@ -144,7 +145,13 @@ export function createRunReviewHelpers(ctx: {
         ), reportLang);
       }
       sendAgentMessage(leader, reportContent, "report", "all", null, taskId);
-      setTimeout(() => { finishReview(taskId, task.title); }, 2500);
+
+      // If this task originated from a messenger session, send review request there
+      // and defer finishReview until the user responds (or timeout)
+      const messengerReviewSent = requestMessengerReview(taskId, task.title, finishReview);
+      if (!messengerReviewSent) {
+        setTimeout(() => { finishReview(taskId, task.title); }, 2500);
+      }
     }, 2500);
   }
 

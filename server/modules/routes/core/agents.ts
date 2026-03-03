@@ -52,13 +52,19 @@ export function registerCoreAgents(ctx: RuntimeContext): void {
 
   registerCoreAgentsProcesses(ctx);
 
-  app.get("/api/agents", (_req, res) => {
+  app.get("/api/agents", (req, res) => {
+    const packKey = typeof req.query.pack_key === "string" ? req.query.pack_key : null;
+    const packFilter = packKey && packKey !== "development"
+      ? "WHERE a.pack_key = ?"
+      : "WHERE (a.pack_key IS NULL OR a.pack_key = 'development')";
+    const params = packKey && packKey !== "development" ? [packKey] : [];
     const agents = db.prepare(`
       SELECT a.*, d.name AS department_name, d.name_ko AS department_name_ko, d.color AS department_color
       FROM agents a
       LEFT JOIN departments d ON a.department_id = d.id
+      ${packFilter}
       ORDER BY a.department_id, a.role, a.name
-    `).all();
+    `).all(...params);
     res.json({ agents });
   });
 
@@ -103,6 +109,11 @@ export function registerCoreAgents(ctx: RuntimeContext): void {
       body.api_provider_id = null;
       body.api_model = null;
     }
+    if ("cli_provider" in body && body.cli_provider !== existing.cli_provider) {
+      // Auto-clear per-agent model overrides when switching CLI provider.
+      if (!("cli_model" in body)) body.cli_model = null;
+      if (!("cli_reasoning_level" in body)) body.cli_reasoning_level = null;
+    }
 
     if ("oauth_account_id" in body) {
       if (body.oauth_account_id === "" || typeof body.oauth_account_id === "undefined") {
@@ -132,6 +143,7 @@ export function registerCoreAgents(ctx: RuntimeContext): void {
       "oauth_account_id", "api_provider_id", "api_model",
       "avatar_emoji", "personality", "status", "current_task_id",
       "sprite_number",
+      "cli_model", "cli_reasoning_level",
     ];
 
     const updates: string[] = [];
@@ -285,8 +297,8 @@ export function registerCoreAgents(ctx: RuntimeContext): void {
     appendTaskLog(taskId, "system", `RUN start (agent=${agent.name}, provider=${provider})`);
 
     const spawnModelConfig = getProviderModelConfig();
-    const spawnModel = spawnModelConfig[provider]?.model || undefined;
-    const spawnReasoningLevel = spawnModelConfig[provider]?.reasoningLevel || undefined;
+    const spawnModel = agent.cli_model || spawnModelConfig[provider]?.model || undefined;
+    const spawnReasoningLevel = agent.cli_reasoning_level || spawnModelConfig[provider]?.reasoningLevel || undefined;
 
     if (provider === "api") {
       const controller = new AbortController();

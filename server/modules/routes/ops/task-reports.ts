@@ -4,6 +4,8 @@
  * Extracted from ops.ts to reduce single-file size.
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import type { RuntimeContext } from "../../../types/runtime-context.ts";
 import {
   normalizeTaskText,
@@ -256,5 +258,114 @@ export function registerOpsTaskReports(ctx: RuntimeContext): void {
       console.error("[task-reports/:id/archive]", err);
       res.status(500).json({ ok: false, error: "Failed to archive consolidated report" });
     }
+  });
+
+  // --- Deliverable files for a task ---
+  const DELIVERABLE_EXTS = new Set([".pptx", ".pdf", ".html", ".png", ".jpg", ".jpeg", ".mp4", ".zip", ".md", ".csv", ".xlsx"]);
+
+  app.get("/api/tasks/:id/deliverables", (req: any, res: any) => {
+    const taskId = String(req.params.id);
+    const task = db.prepare("SELECT project_path, title FROM tasks WHERE id = ?").get(taskId) as any;
+    if (!task) return res.status(404).json({ error: "not_found" });
+    const projectPath = task.project_path || process.cwd();
+
+    // Collect this task's worktree + related subtask worktrees
+    const relatedTaskIds = [taskId];
+    try {
+      const subs = db.prepare("SELECT delegated_task_id FROM subtasks WHERE task_id = ? AND delegated_task_id IS NOT NULL").all(taskId) as any[];
+      for (const s of subs) if (s.delegated_task_id) relatedTaskIds.push(s.delegated_task_id);
+      // Also child collaboration tasks
+      const children = db.prepare("SELECT id FROM tasks WHERE source_task_id = ?").all(taskId) as any[];
+      for (const c of children) relatedTaskIds.push(c.id);
+    } catch { /* ignore */ }
+
+    const searchDirs = [
+      path.join(projectPath, "output"),
+      path.join(projectPath, "slides"),
+    ];
+
+    // Only scan worktrees belonging to this task and its subtasks
+    const worktreeBase = path.join(projectPath, ".climpire-worktrees");
+    if (fs.existsSync(worktreeBase)) {
+      for (const tid of relatedTaskIds) {
+        const shortId = tid.slice(0, 8);
+        const wtPath = path.join(worktreeBase, shortId);
+        if (fs.existsSync(wtPath)) {
+          searchDirs.push(path.join(wtPath, "output"));
+          searchDirs.push(path.join(wtPath, "slides"));
+          searchDirs.push(path.join(wtPath, "docs", "reports"));
+        }
+      }
+    }
+
+    console.log(`[deliverables] task=${taskId} project_path=${projectPath} searchDirs=${searchDirs.length}:`, searchDirs.filter((d: string) => fs.existsSync(d)));
+
+    const files: Array<{ name: string; path: string; relPath: string; size: number; modified: number; ext: string }> = [];
+
+    function scanDir(dir: string, depth = 0): void {
+      if (depth > 5 || !fs.existsSync(dir)) return;
+      try {
+        for (const name of fs.readdirSync(dir)) {
+          const fullPath = path.join(dir, name);
+          try {
+            const stat = fs.statSync(fullPath);
+            if (stat.isDirectory()) { scanDir(fullPath, depth + 1); continue; }
+            const ext = path.extname(name).toLowerCase();
+            if (!DELIVERABLE_EXTS.has(ext)) continue;
+            files.push({
+              name,
+              path: fullPath,
+              relPath: path.relative(projectPath, fullPath).replace(/\\/g, "/"),
+              size: stat.size,
+              modified: stat.mtimeMs,
+              ext,
+            });
+          } catch { /* skip */ }
+        }
+      } catch { /* skip */ }
+    }
+
+    for (const dir of searchDirs) { scanDir(dir); }
+
+    files.sort((a, b) => b.modified - a.modified);
+    res.json({ files: files.slice(0, 50) });
+  });
+
+  // --- Open/download a deliverable file ---
+  app.get("/api/deliverables/open", (req: any, res: any) => {
+    const filePath = path.resolve(String(req.query.path ?? ""));
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "file_not_found" });
+    }
+    // Security: only allow files under known deliverable directories
+    const cwd = process.cwd();
+    const allowed = [
+      path.join(cwd, "output"),
+      path.join(cwd, "slides"),
+      path.join(cwd, "docs", "reports"),
+      path.join(cwd, "dist"),
+      path.join(cwd, ".climpire-worktrees"),
+    ];
+    const isAllowed = allowed.some((dir) => filePath.startsWith(dir + path.sep) || filePath.startsWith(dir + "/"));
+    if (!isAllowed) {
+      return res.status(403).json({ error: "path_not_allowed" });
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeMap: Record<string, string> = {
+      ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      ".pdf": "application/pdf",
+      ".html": "text/html",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".mp4": "video/mp4",
+      ".zip": "application/zip",
+      ".md": "text/markdown",
+      ".csv": "text/csv",
+      ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    };
+    res.setHeader("Content-Type", mimeMap[ext] ?? "application/octet-stream");
+    res.setHeader("Content-Disposition", `inline; filename="${path.basename(filePath)}"`);
+    fs.createReadStream(filePath).pipe(res);
   });
 }

@@ -105,10 +105,31 @@ export function createWorktree(
     } else {
       base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: projectPath, stdio: "pipe", timeout: 5000 }).toString().trim();
     }
-    execFileSync("git", ["worktree", "add", worktreePath, "-b", branchName, base], { cwd: projectPath, stdio: "pipe", timeout: 15000 });
-    taskWorktrees.set(taskId, { worktreePath, branchName, projectPath });
-    console.log(`[HyperClaw] Created worktree for task ${shortId}: ${worktreePath} (branch: ${branchName}, agent: ${agentName})`);
-    return worktreePath;
+    // Try with suffix candidates on branch collision
+    const MAX_SUFFIX = 3;
+    for (let attempt = 0; attempt < MAX_SUFFIX; attempt++) {
+      const suffix = attempt === 0 ? "" : `-${attempt}`;
+      const candidateBranch = `${branchName}${suffix}`;
+      const candidatePath = `${worktreePath}${suffix}`;
+      try {
+        execFileSync("git", ["worktree", "add", candidatePath, "-b", candidateBranch, base], { cwd: projectPath, stdio: "pipe", timeout: 15000 });
+        taskWorktrees.set(taskId, { worktreePath: candidatePath, branchName: candidateBranch, projectPath });
+        console.log(`[HyperClaw] Created worktree for task ${shortId}: ${candidatePath} (branch: ${candidateBranch}, agent: ${agentName})`);
+        return candidatePath;
+      } catch {
+        // Branch may already exist — try deleting and retrying once
+        try {
+          execFileSync("git", ["branch", "-D", candidateBranch], { cwd: projectPath, stdio: "pipe", timeout: 5000 });
+          execFileSync("git", ["worktree", "add", candidatePath, "-b", candidateBranch, base], { cwd: projectPath, stdio: "pipe", timeout: 15000 });
+          taskWorktrees.set(taskId, { worktreePath: candidatePath, branchName: candidateBranch, projectPath });
+          console.log(`[HyperClaw] Created worktree for task ${shortId} (after branch cleanup): ${candidatePath}`);
+          return candidatePath;
+        } catch { /* try next suffix */ }
+      }
+    }
+    appendTaskLog(taskId, "system", `Git worktree creation skipped after ${MAX_SUFFIX} attempts. Running directly in project directory.`);
+    console.error(`[HyperClaw] Failed to create worktree for task ${shortId} after ${MAX_SUFFIX} attempts`);
+    return null;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     appendTaskLog(taskId, "system", `Git worktree creation skipped: ${msg}. Running directly in project directory.`);

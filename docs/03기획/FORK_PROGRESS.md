@@ -1,4 +1,4 @@
-﻿# HAIFeR Agent — 오픈소스 포크 기반 진행 방안
+# HAIFeR Agent — 오픈소스 포크 기반 진행 방안
 
 이 문서는 **오픈소스를 가져와 브랜드·저장소만 변경한 상태**에서, 어떤 순서로 정리·운영하면 좋을지 정리한 가이드입니다.
 
@@ -17,7 +17,7 @@
 ### 2.1 이미지·에셋 변경 (우선 권장)
 
 - **로고·파비콘:** `public/hyperclaw.svg` — index.html(파비콘), README.md 에서 사용. 내용 교체하거나 `haiferagent.svg` 추가 후 참조 수정.
-- **부가 에셋:** `public/claw-empire.svg`, `public/climpire.svg` 사용처 확인 후 필요 시 교체.
+- **부가 에셋:** `public/climpire.svg` 사용처 확인 후 필요 시 교체.
 - **슬라이드/문서:** `docs/reports/Sample_Slides/`, `slides/` HTML 내 이미지 경로 수정.
 - (원본에 LICENSE 없음 — 배포 시 자체 LICENSE 추가 검토.)
 ### 2.2 문서·문구 통일

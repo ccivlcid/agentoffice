@@ -174,3 +174,22 @@ export async function archiveTaskReport(taskId: string): Promise<{
 }> {
   return request(`/api/task-reports/${taskId}/archive`, { method: 'POST' });
 }
+
+export interface DeliverableFile {
+  name: string;
+  path: string;
+  relPath: string;
+  size: number;
+  modified: number;
+  ext: string;
+}
+
+export async function getTaskDeliverables(taskId: string): Promise<DeliverableFile[]> {
+  const j = await request<{ files: DeliverableFile[] }>(`/api/tasks/${taskId}/deliverables`);
+  return j.files;
+}
+
+export function getDeliverableOpenUrl(filePath: string): string {
+  const base = window.location.origin;
+  return `${base}/api/deliverables/open?path=${encodeURIComponent(filePath)}`;
+}

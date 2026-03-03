@@ -104,6 +104,14 @@ export async function resumeTask(id: string): Promise<void> {
   await post(`/api/tasks/${id}/resume`);
 }
 
+export async function injectTaskPrompt(
+  id: string,
+  prompt: string,
+  interruptToken: string,
+): Promise<{ ok: boolean; injection_id?: string }> {
+  return post(`/api/tasks/${id}/inject`, { prompt, interrupt_token: interruptToken }) as Promise<{ ok: boolean; injection_id?: string }>;
+}
+
 export type TerminalProgressHint = {
   phase: 'use' | 'ok' | 'error';
   tool: string;

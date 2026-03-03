@@ -166,8 +166,8 @@ export function createTaskExecutionHelpers(ctx: {
       );
     } else {
       const modelConfig = getProviderModelConfig();
-      const modelForProvider = modelConfig[provider]?.model || undefined;
-      const reasoningLevel = modelConfig[provider]?.reasoningLevel || undefined;
+      const modelForProvider = execAgent.cli_model || modelConfig[provider]?.model || undefined;
+      const reasoningLevel = execAgent.cli_reasoning_level || modelConfig[provider]?.reasoningLevel || undefined;
       const child = spawnCliAgent(taskId, provider, spawnPrompt, agentCwd, logFilePath, modelForProvider, reasoningLevel);
       child.on("close", (code) => {
         handleTaskRunComplete(taskId, code ?? 1);

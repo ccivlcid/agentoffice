@@ -22,6 +22,7 @@ import { registerOpsTestingDetect } from "./ops/testing-detect.ts";
 import { registerOpsPreview } from "./ops/preview.ts";
 import { registerOpsChecklist } from "./ops/checklist.ts";
 import { registerOpsGatewayRoutes } from "./ops/gateway-routes.ts";
+import { registerOpsWorkflowPacks } from "./ops/workflow-packs.ts";
 import { registerExternalInboxRoute } from "./ops/inbox-routes.ts";
 
 export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
@@ -200,6 +201,7 @@ export function registerRoutesPartC(ctx: RuntimeContext): RouteOpsExports {
   registerOpsPreview(__ctx);
   registerOpsChecklist(__ctx);
   registerOpsGatewayRoutes(__ctx);
+  registerOpsWorkflowPacks(__ctx);
   registerExternalInboxRoute(__ctx);
 
   return {

@@ -45,6 +45,8 @@ export interface Agent {
   stats_tasks_done: number;
   stats_xp: number;
   sprite_number?: number;
+  cli_model?: string | null;
+  cli_reasoning_level?: string | null;
   created_at: number;
 }
 

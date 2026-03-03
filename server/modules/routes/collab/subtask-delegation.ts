@@ -51,6 +51,14 @@ export function initializeSubtaskDelegation(deps: {
       "SELECT * FROM subtasks WHERE task_id = ? AND target_department_id IS NOT NULL AND (delegated_task_id IS NULL OR delegated_task_id = '') ORDER BY created_at"
     ).all(taskId) as unknown as SubtaskRow[];
     if (foreignSubtasks.length === 0) return;
+
+    // video_preprod pack: defer [VIDEO_FINAL_RENDER] subtask until all others complete
+    const renderIdx = foreignSubtasks.findIndex((s: any) => s.title?.includes("[VIDEO_FINAL_RENDER]"));
+    if (renderIdx >= 0 && foreignSubtasks.length > 1) {
+      const renderSubtask = foreignSubtasks.splice(renderIdx, 1)[0];
+      foreignSubtasks.push(renderSubtask);
+    }
+
     const parentTask = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId) as {
       id: string; title: string; description: string | null;
       project_id: string | null; project_path: string | null; department_id: string | null;
@@ -269,7 +277,7 @@ export function initializeSubtaskDelegation(deps: {
       launchHttpAgent(delegatedTaskId, execProvider, sessionPrompt, agentCwd, logFilePath, new AbortController(), getNextHttpAgentPid(), execAgent.oauth_account_id ?? null);
     } else {
       const delegateModelConfig = getProviderModelConfig();
-      const child = spawnCliAgent(delegatedTaskId, execProvider, sessionPrompt, agentCwd, logFilePath, delegateModelConfig[execProvider]?.model, delegateModelConfig[execProvider]?.reasoningLevel);
+      const child = spawnCliAgent(delegatedTaskId, execProvider, sessionPrompt, agentCwd, logFilePath, execAgent.cli_model || delegateModelConfig[execProvider]?.model, execAgent.cli_reasoning_level || delegateModelConfig[execProvider]?.reasoningLevel);
       child.on("close", (code) => { handleSubtaskDelegationBatchComplete(delegatedTaskId, subtaskIds, code ?? 1); });
     }
     const worktreeCeoNote = worktreePath ? pickL(l(

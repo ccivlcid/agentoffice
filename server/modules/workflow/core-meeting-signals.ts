@@ -33,10 +33,10 @@ export function fallbackTurnReply(kind: ReplyKind, lang: string, agent?: any): s
       return `${name}: 본 회의 결론에 따라 진행하겠습니다.`;
     case "direct":
     default:
-      if (lang === "en") return `${name}: Acknowledged. Proceeding with the requested direction.`;
-      if (lang === "ja") return `${name}: 承知しました。ご指示の方向で進めます。`;
-      if (lang === "zh") return `${name}: 收到，将按您的指示推进。`;
-      return `${name}: 확인했습니다. 요청하신 방향으로 진행하겠습니다.`;
+      if (lang === "en") return `${name}: Got it! Let me know if you need anything else.`;
+      if (lang === "ja") return `${name}: 了解です！他にご用件があればお知らせください。`;
+      if (lang === "zh") return `${name}: 收到！如有其他需要请随时告知。`;
+      return `${name}: 네, 알겠습니다! 다른 필요한 게 있으면 말씀해주세요.`;
   }
 }
 

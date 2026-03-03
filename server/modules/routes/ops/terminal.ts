@@ -93,7 +93,13 @@ export function registerOpsTerminal(ctx: RuntimeContext): { prettyStreamJson: (r
     ).all(id, logLimit) as Array<{ id: number; kind: string; message: string; created_at: number }>;
     taskLogs.reverse();
 
-    res.json({ ok: true, exists: true, path: filePath, text, task_logs: taskLogs, progress_hints: progressHints });
+    // Include interrupt proof for paused tasks
+    const taskRow = db.prepare("SELECT status, interrupt_token FROM tasks WHERE id = ?").get(id) as { status: string; interrupt_token: string | null } | undefined;
+    const interrupt = (taskRow?.status === "pending" && taskRow.interrupt_token)
+      ? { control_token: taskRow.interrupt_token }
+      : undefined;
+
+    res.json({ ok: true, exists: true, path: filePath, text, task_logs: taskLogs, progress_hints: progressHints, interrupt });
   });
 
   return { prettyStreamJson };

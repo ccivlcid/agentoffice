@@ -15,6 +15,7 @@ export interface OneShotRunOptions {
   timeoutMs?: number;
   streamTaskId?: string | null;
   rawOutput?: boolean;
+  noTools?: boolean;
 }
 
 export interface OneShotRunResult {
@@ -119,9 +120,9 @@ export async function runAgentOneShot(
       if (!rawOutput.trim() && fs.existsSync(logPath)) rawOutput = fs.readFileSync(logPath, "utf8");
     } else {
       const modelConfig = deps.getProviderModelConfig();
-      const model = modelConfig[provider]?.model || undefined;
-      const reasoningLevel = modelConfig[provider]?.reasoningLevel || undefined;
-      const args = buildAgentArgs(provider, model, reasoningLevel);
+      const model = agent.cli_model || modelConfig[provider]?.model || undefined;
+      const reasoningLevel = agent.cli_reasoning_level || modelConfig[provider]?.reasoningLevel || undefined;
+      const args = buildAgentArgs(provider, model, reasoningLevel, { noTools: opts.noTools });
 
       await new Promise<void>((resolve, reject) => {
         const cleanEnv = { ...process.env };

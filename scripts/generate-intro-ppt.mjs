@@ -66,7 +66,7 @@ function addTitle(slide, title, opts = {}) {
   s.addShape(pptx.ShapeType.rect, {
     x: 0, y: 0, w: 0.08, h: "100%", fill: { color: C.accent },
   });
-  s.addText("CLAW-EMPIRE", {
+  s.addText("HYPERCLAW", {
     x: 0.8, y: 1.5, w: 8.5, h: 1,
     fontSize: 44, fontFace: "Arial", bold: true, color: C.white,
   });

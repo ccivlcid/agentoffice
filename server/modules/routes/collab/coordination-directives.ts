@@ -246,8 +246,8 @@ export function initializeCollabDirectives(deps: {
 
           appendTaskLog(crossTaskId, "system", `RUN start (agent=${execAgent.name}, provider=${execProvider})`);
           const crossModelConfig = getProviderModelConfig();
-          const crossModel = crossModelConfig[execProvider]?.model || undefined;
-          const crossReasoningLevel = crossModelConfig[execProvider]?.reasoningLevel || undefined;
+          const crossModel = execAgent.cli_model || crossModelConfig[execProvider]?.model || undefined;
+          const crossReasoningLevel = execAgent.cli_reasoning_level || crossModelConfig[execProvider]?.reasoningLevel || undefined;
           const child = spawnCliAgent(crossTaskId, execProvider, sessionPrompt, projPath, logFilePath, crossModel, crossReasoningLevel);
           child.on("close", (code) => {
             const linked = delegatedTaskToSubtask.get(crossTaskId);

@@ -58,6 +58,42 @@ export function runMigrationsPart2(db: Database): void {
     db.exec("CREATE INDEX IF NOT EXISTS idx_task_creation_audits_completed ON task_creation_audits(completed, created_at DESC)");
   } catch { /* table missing or migration in progress */ }
 
+  // v1.2.4: Workflow Pack platform
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workflow_pack_state (
+      pack_key TEXT PRIMARY KEY,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      hydrated INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER DEFAULT (unixepoch()*1000)
+    );
+  `);
+  try { db.exec("ALTER TABLE agents ADD COLUMN pack_key TEXT"); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE departments ADD COLUMN pack_key TEXT"); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE messenger_sessions ADD COLUMN workflow_pack_key TEXT"); } catch { /* already exists */ }
+
+  // v1.2.4: Messenger multi-token route isolation
+  try { db.exec("ALTER TABLE messenger_sessions ADD COLUMN token_key TEXT"); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE messenger_routes ADD COLUMN token_key TEXT"); } catch { /* already exists */ }
+
+  // v1.2.2: Interrupt-inject workflow
+  try { db.exec("ALTER TABLE tasks ADD COLUMN interrupt_token TEXT"); } catch { /* already exists */ }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_interrupt_injections (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      prompt TEXT NOT NULL,
+      prompt_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','consumed','rejected')),
+      created_at INTEGER DEFAULT (unixepoch()*1000),
+      consumed_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_task_inject_taskid ON task_interrupt_injections(task_id, status, created_at DESC);
+  `);
+
+  // v1.2.2: Per-agent CLI model overrides
+  try { db.exec("ALTER TABLE agents ADD COLUMN cli_model TEXT"); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE agents ADD COLUMN cli_reasoning_level TEXT"); } catch { /* already exists */ }
+
   // v1.2.0: Safe sort_order UNIQUE index migration for departments
   try {
     // Drop old UNIQUE index if it exists to avoid constraint violations during seed updates

@@ -5,6 +5,7 @@
  */
 
 import type { RuntimeContext } from "../../../types/runtime-context.ts";
+import { generateInterruptToken, consumePendingInjection } from "../../workflow/core-interrupt-injection.ts";
 
 export function registerTaskStop(ctx: RuntimeContext): void {
   const {
@@ -110,6 +111,15 @@ export function registerTaskStop(ctx: RuntimeContext): void {
     const lang = resolveLang(task.title);
 
     stopProgressTimer(id);
+
+    // Generate interrupt token for paused tasks
+    let interruptToken: string | null = null;
+    if (targetStatus === "pending") {
+      interruptToken = generateInterruptToken();
+      db.prepare("UPDATE tasks SET interrupt_token = ? WHERE id = ?").run(interruptToken, id);
+    } else {
+      db.prepare("UPDATE tasks SET interrupt_token = NULL WHERE id = ?").run(id);
+    }
 
     const activeChild = activeProcesses.get(id);
     if (!activeChild?.pid) {
@@ -253,6 +263,19 @@ export function registerTaskStop(ctx: RuntimeContext): void {
 
     const updatedTask = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
     broadcast("task_update", updatedTask);
+
+    // Clear interrupt token on resume
+    db.prepare("UPDATE tasks SET interrupt_token = NULL WHERE id = ?").run(id);
+
+    // Consume any queued injection prompt
+    const injection = consumePendingInjection(db, id);
+    if (injection) {
+      appendTaskLog(id, "system", `INJECT consumed (len=${injection.prompt.length})`);
+      // Store injection in task description as append so it's picked up by prompt builder
+      const currentDesc = (db.prepare("SELECT description FROM tasks WHERE id = ?").get(id) as any)?.description ?? "";
+      const injectedDesc = currentDesc + `\n\n[OPERATOR INJECTION]\n${injection.prompt}`;
+      db.prepare("UPDATE tasks SET description = ? WHERE id = ?").run(injectedDesc, id);
+    }
 
     let autoResumed = false;
     const existingSession = taskExecutionSessions.get(id);

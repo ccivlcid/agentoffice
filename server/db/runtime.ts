@@ -59,6 +59,19 @@ export const CLI_OUTPUT_DEDUP_WINDOW_MS = Math.max(
   readNonNegativeIntEnv("CLI_OUTPUT_DEDUP_WINDOW_MS", 1500),
 );
 
+/**
+ * Meeting one-shot timeout (default 65 000 ms).
+ * Values <= 600 are treated as seconds for backward compat.
+ */
+function resolveTimeoutMs(raw: number, fallback: number): number {
+  if (raw <= 0) return fallback;
+  return raw <= 600 ? raw * 1000 : raw;
+}
+export const REVIEW_MEETING_ONESHOT_TIMEOUT_MS = resolveTimeoutMs(
+  readNonNegativeIntEnv("REVIEW_MEETING_ONESHOT_TIMEOUT_MS", 65_000),
+  65_000,
+);
+
 export function initializeDatabaseRuntime(): {
   dbPath: string;
   db: DatabaseSync;

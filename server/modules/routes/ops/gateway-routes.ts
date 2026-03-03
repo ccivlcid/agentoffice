@@ -8,8 +8,12 @@
  * DELETE /api/gateway/sessions/:id — delete a session
  */
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { encryptSecret, decryptSecret } from "../../../oauth/helpers.ts";
+
+function deriveTokenKey(rawToken: string): string {
+  return createHash("sha256").update(rawToken).digest("hex").slice(0, 12);
+}
 import { sendToChannel } from "../../../gateway/send.ts";
 
 export function registerOpsGatewayRoutes(ctx: { app: any; db: any; nowMs: () => number }) {
@@ -109,6 +113,7 @@ export function registerOpsGatewayRoutes(ctx: { app: any; db: any; nowMs: () => 
     }
 
     const tokenEnc = rawToken ? encryptSecret(rawToken) : null;
+    const tokenKey = rawToken ? deriveTokenKey(rawToken) : null;
     const now = nowMs();
 
     if (id) {
@@ -116,9 +121,9 @@ export function registerOpsGatewayRoutes(ctx: { app: any; db: any; nowMs: () => 
       const existing = db.prepare("SELECT * FROM messenger_sessions WHERE id = ?").get(id);
       if (!existing) return res.status(404).json({ error: "session_not_found" });
 
-      const setToken = tokenEnc !== null ? ", token_enc = ?" : "";
+      const setToken = tokenEnc !== null ? ", token_enc = ?, token_key = ?" : "";
       const params: any[] = [channel, target, displayName, agentId, active, now];
-      if (tokenEnc !== null) params.push(tokenEnc);
+      if (tokenEnc !== null) { params.push(tokenEnc); params.push(tokenKey); }
       params.push(id);
 
       db.prepare(
@@ -137,9 +142,9 @@ export function registerOpsGatewayRoutes(ctx: { app: any; db: any; nowMs: () => 
     const newId = randomUUID();
     const sessionKey = randomUUID();
     db.prepare(
-      `INSERT INTO messenger_sessions (id, channel, token_enc, target, display_name, agent_id, session_key, active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(newId, channel, tokenEnc, target, displayName, agentId, sessionKey, active, now, now);
+      `INSERT INTO messenger_sessions (id, channel, token_enc, token_key, target, display_name, agent_id, session_key, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(newId, channel, tokenEnc, tokenKey, target, displayName, agentId, sessionKey, active, now, now);
 
     const created = db
       .prepare(

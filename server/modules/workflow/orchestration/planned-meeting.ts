@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import { REVIEW_MEETING_ONESHOT_TIMEOUT_MS } from "../../../db/runtime.ts";
+
 export function createPlannedMeetingHelpers(ctx: {
   db: any;
   nowMs: () => number;
@@ -85,7 +87,7 @@ export function createPlannedMeetingHelpers(ctx: {
         });
         const lang = resolveLang(taskDescription ?? taskTitle);
         const transcript: any[] = [];
-        const oneShotOptions = { projectPath, timeoutMs: 35_000 };
+        const oneShotOptions = { projectPath, timeoutMs: REVIEW_MEETING_ONESHOT_TIMEOUT_MS, noTools: true };
         const wantsRevision = (content: string): boolean => (
           /보완|수정|보류|리스크|추가.?필요|hold|revise|revision|required|pending|risk|block|保留|修正|补充|暂缓/i
         ).test(content);

@@ -1,0 +1,90 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HyperClaw API",
+    "version": "1.2.4",
+    "description": "HyperClaw REST API baseline. See docs/api.md for details."
+  },
+  "servers": [
+    { "url": "http://127.0.0.1:8790", "description": "Local development" }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": { "summary": "Health check", "responses": { "200": { "description": "OK" } } }
+    },
+    "/api/departments": {
+      "get": {
+        "summary": "List departments",
+        "parameters": [
+          { "name": "pack_key", "in": "query", "schema": { "type": "string" }, "description": "Workflow pack filter" }
+        ],
+        "responses": { "200": { "description": "Department list" } }
+      },
+      "post": { "summary": "Create department", "responses": { "201": { "description": "Created" } } }
+    },
+    "/api/agents": {
+      "get": {
+        "summary": "List agents",
+        "parameters": [
+          { "name": "pack_key", "in": "query", "schema": { "type": "string" }, "description": "Workflow pack filter" }
+        ],
+        "responses": { "200": { "description": "Agent list" } }
+      },
+      "post": { "summary": "Create agent", "responses": { "201": { "description": "Created" } } }
+    },
+    "/api/agents/{id}": {
+      "patch": { "summary": "Update agent", "responses": { "200": { "description": "Updated" } } },
+      "delete": { "summary": "Delete agent", "responses": { "200": { "description": "Deleted" } } }
+    },
+    "/api/tasks": {
+      "get": { "summary": "List tasks", "responses": { "200": { "description": "Task list" } } },
+      "post": { "summary": "Create task", "responses": { "201": { "description": "Created" } } }
+    },
+    "/api/tasks/{id}/run": {
+      "post": { "summary": "Start task execution", "responses": { "200": { "description": "Started" } } }
+    },
+    "/api/tasks/{id}/stop": {
+      "post": { "summary": "Stop or pause task", "responses": { "200": { "description": "Stopped" } } }
+    },
+    "/api/tasks/{id}/resume": {
+      "post": { "summary": "Resume paused task", "responses": { "200": { "description": "Resumed" } } }
+    },
+    "/api/tasks/{id}/inject": {
+      "post": {
+        "summary": "Queue interrupt injection prompt for paused task",
+        "responses": {
+          "200": { "description": "Injection queued" },
+          "400": { "description": "Invalid status or empty prompt" },
+          "403": { "description": "Invalid interrupt token" }
+        }
+      }
+    },
+    "/api/tasks/{id}/terminal": {
+      "get": { "summary": "Task terminal logs", "responses": { "200": { "description": "Terminal output" } } }
+    },
+    "/api/settings": {
+      "get": { "summary": "Read settings", "responses": { "200": { "description": "Settings object" } } },
+      "put": { "summary": "Save settings", "responses": { "200": { "description": "Saved" } } }
+    },
+    "/api/stats": {
+      "get": { "summary": "Dashboard stats", "responses": { "200": { "description": "Stats object" } } }
+    },
+    "/api/workflow-packs": {
+      "get": { "summary": "List workflow packs", "responses": { "200": { "description": "Pack list" } } }
+    },
+    "/api/workflow-packs/{key}/hydrate": {
+      "post": { "summary": "Hydrate pack seeds into DB", "responses": { "200": { "description": "Hydrated" } } }
+    },
+    "/api/projects": {
+      "get": { "summary": "List projects", "responses": { "200": { "description": "Project list" } } },
+      "post": { "summary": "Create project", "responses": { "201": { "description": "Created" } } }
+    },
+    "/api/decision-inbox": {
+      "get": { "summary": "Decision inbox items", "responses": { "200": { "description": "Items" } } }
+    },
+    "/api/gateway/sessions": {
+      "get": { "summary": "List messenger sessions", "responses": { "200": { "description": "Sessions" } } },
+      "post": { "summary": "Create/update messenger session", "responses": { "200": { "description": "OK" } } }
+    }
+  }
+}

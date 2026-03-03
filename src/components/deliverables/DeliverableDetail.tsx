@@ -9,7 +9,8 @@ import DeliverableMinutesTab from "./DeliverableMinutesTab";
 import DeliverableLogTab from "./DeliverableLogTab";
 import DeliverablePreviewLogTab from "./DeliverablePreviewLogTab.tsx";
 import DeliverableTestTab from "./DeliverableTestTab";
-import { FileText, Code, BookOpen, Users, Terminal, Server, FlaskConical, Trash2 } from "lucide-react";
+import DeliverableFilesTab from "./DeliverableFilesTab";
+import { FileText, Code, BookOpen, Users, Terminal, Server, FlaskConical, Trash2, FolderDown } from "lucide-react";
 
 interface DeliverableDetailProps {
   task: Task;
@@ -17,10 +18,11 @@ interface DeliverableDetailProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-type TabKey = "summary" | "code" | "doc" | "test" | "minutes" | "execution" | "serverLog";
+type TabKey = "summary" | "files" | "code" | "doc" | "test" | "minutes" | "execution" | "serverLog";
 
 const TAB_ICONS: Record<TabKey, React.ReactNode> = {
   summary: <FileText width={12} height={12} />,
+  files: <FolderDown width={12} height={12} />,
   code: <Code width={12} height={12} />,
   doc: <BookOpen width={12} height={12} />,
   test: <FlaskConical width={12} height={12} />,
@@ -76,6 +78,7 @@ export default function DeliverableDetail({ task, departments, onDelete }: Deliv
   const tabs = useMemo(() => {
     const list: { key: TabKey; label: string }[] = [
       { key: "summary", label: t({ ko: "요약", en: "Summary" }) },
+      { key: "files", label: t({ ko: "산출물", en: "Files" }) },
     ];
     if (hasCodeAndTest) {
       list.push({ key: "code", label: t({ ko: "코드", en: "Code" }) });
@@ -163,6 +166,7 @@ export default function DeliverableDetail({ task, departments, onDelete }: Deliv
               style={{ display: isActive ? "block" : "none" }}
             >
               {tab.key === "summary" && <DeliverableSummaryTab taskId={task.id} />}
+              {tab.key === "files" && <DeliverableFilesTab taskId={task.id} />}
               {tab.key === "code" && <DeliverableCodeTab taskId={task.id} />}
               {tab.key === "doc" && <DeliverableDocTab taskId={task.id} />}
               {tab.key === "test" && <DeliverableTestTab taskId={task.id} taskType={task.task_type} />}

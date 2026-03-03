@@ -9,13 +9,19 @@ import { randomUUID } from "node:crypto";
 export function registerCoreDepartments(ctx: RuntimeContext): void {
   const { app, db, broadcast, nowMs } = ctx;
 
-  app.get("/api/departments", (_req, res) => {
+  app.get("/api/departments", (req, res) => {
+    const packKey = typeof req.query.pack_key === "string" ? req.query.pack_key : null;
+    const packFilter = packKey && packKey !== "development"
+      ? "WHERE d.pack_key = ?"
+      : "WHERE (d.pack_key IS NULL OR d.pack_key = 'development')";
+    const params = packKey && packKey !== "development" ? [packKey] : [];
     const departments = db.prepare(`
       SELECT d.*,
         (SELECT COUNT(*) FROM agents a WHERE a.department_id = d.id) AS agent_count
       FROM departments d
+      ${packFilter}
       ORDER BY d.sort_order ASC
-    `).all();
+    `).all(...params);
     res.json({ departments });
   });
 

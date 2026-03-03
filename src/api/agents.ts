@@ -1,8 +1,9 @@
 import type { Agent, MeetingPresence } from '../types';
 import { request, patch, post, del } from './client';
 
-export async function getAgents(): Promise<Agent[]> {
-  const j = await request<{ agents: Agent[] }>('/api/agents');
+export async function getAgents(packKey?: string): Promise<Agent[]> {
+  const qs = packKey ? `?pack_key=${encodeURIComponent(packKey)}` : '';
+  const j = await request<{ agents: Agent[] }>(`/api/agents${qs}`);
   return j.agents;
 }
 
@@ -36,6 +37,8 @@ export async function updateAgent(
       | 'name_zh'
       | 'avatar_emoji'
       | 'sprite_number'
+      | 'cli_model'
+      | 'cli_reasoning_level'
     >
   >,
 ): Promise<void> {

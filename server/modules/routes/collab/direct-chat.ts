@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import type { Lang } from "../../../types/lang.ts";
 import type { AgentRow } from "./agent-types.ts";
 import { l, pickL } from "./agent-types.ts";
@@ -46,17 +46,38 @@ export function initializeDirectChat(deps: {
     executeCopilotAgent, executeAntigravityAgent, buildCliFailureMessage, handleTaskDelegation,
   } = deps;
 
+  /**
+   * Register a messenger_route so task status notifications relay back to the originating session.
+   * If taskId is provided, links directly. Otherwise uses content_hash for later matching.
+   */
+  function registerMessengerRouteIfNeeded(ceoMessage: string, options: any, taskId?: string): void {
+    const sessionKey = options?.messengerSessionKey;
+    const author = options?.messengerAuthor;
+    if (!sessionKey) return;
+    // Hash both full content AND short title so either lookup path can match
+    const title = ceoMessage.trim();
+    const shortTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;
+    const contentHash = createHash("sha256").update(shortTitle).digest("hex").slice(0, 32);
+    try {
+      db.prepare(
+        `INSERT OR IGNORE INTO messenger_routes (id, task_id, content_hash, source, author, session_key, created_at)
+         VALUES (?, ?, ?, 'telegram', ?, ?, ?)`,
+      ).run(randomUUID(), taskId ?? null, contentHash, author ?? "", sessionKey, Date.now());
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Lightweight pre-filter: only catches explicit task prefixes.
+   * The real task/chat classification is done by the agent via [TASK] marker in the response.
+   */
   function shouldTreatDirectChatAsTask(ceoMessage: string, messageType: string): boolean {
     if (messageType === "task_assign") return true;
     if (messageType === "report") return false;
     const text = ceoMessage.trim();
     if (!text) return false;
     if (/^\[(의사결정\s*회신|decision\s*reply|意思決定返信|决策回复)\]/i.test(text)) return false;
+    // Only explicit task prefix triggers task flow pre-agent
     if (/^\s*(task|todo|업무|지시|작업|할일)\s*[:\-]/i.test(text)) return true;
-    const taskKeywords = /(테스트|검증|확인해|진행해|수정해|구현해|반영해|처리해|해줘|부탁|fix|implement|refactor|test|verify|check|run|apply|update|debug|investigate|対応|確認|修正|実装|测试|检查|修复|处理)/i;
-    if (taskKeywords.test(text)) return true;
-    const requestTone = /(해주세요|해 주세요|부탁해|부탁합니다|please|can you|could you|お願いします|してください|请|麻烦)/i;
-    if (requestTone.test(text) && text.length >= 12) return true;
     return false;
   }
 
@@ -134,7 +155,9 @@ export function initializeDirectChat(deps: {
       return;
     }
 
-    const delay = 1000 + Math.random() * 2000;
+    // Messenger path: minimal delay for faster response; web UI: longer delay for natural feel
+    const isMessenger = Boolean(options?.messengerSessionKey);
+    const delay = isMessenger ? 200 + Math.random() * 300 : 1000 + Math.random() * 2000;
     setTimeout(() => {
       void (async () => {
         const activeTask = agent.current_task_id
@@ -173,6 +196,16 @@ export function initializeDirectChat(deps: {
           if (contentOnly) { finalReply = contentOnly.length > 12000 ? contentOnly.slice(0, 12000) : contentOnly; }
           else if (apiError) { finalReply = `[API Error] ${apiError}`; }
           else { finalReply = chooseSafeReply({ text: "" }, built.lang, "direct", agent); }
+          // Agent classified as task → escalate
+          if (/^\[TASK\]/m.test(contentOnly || fullText)) {
+            const cleanReply = finalReply.replace(/^\[TASK\]\s*/i, "").trim();
+            broadcast("chat_stream", { phase: "end", message_id: msgId, agent_id: agent.id, content: cleanReply, created_at: nowMs() });
+            if (cleanReply) sendAgentMessage(agent, cleanReply);
+            registerMessengerRouteIfNeeded(ceoMessage, options);
+            if (agent.role === "team_leader" && agent.department_id) { handleTaskDelegation(agent, ceoMessage, "", options); }
+            else { createDirectAgentTaskAndRun(agent, ceoMessage, options); }
+            return;
+          }
           const endedAt = nowMs();
           db.prepare(`INSERT INTO messages (id, sender_type, sender_id, receiver_type, receiver_id, content, message_type, task_id, created_at) VALUES (?, 'agent', ?, 'agent', NULL, ?, 'chat', NULL, ?)`)
             .run(msgId, agent.id, finalReply, endedAt);
@@ -210,6 +243,16 @@ export function initializeDirectChat(deps: {
           if (contentOnly) { finalReply = contentOnly.length > 12000 ? contentOnly.slice(0, 12000) : contentOnly; }
           else if (oauthError) { finalReply = `[OAuth Error] ${oauthError}`; }
           else { finalReply = chooseSafeReply({ text: "" }, built.lang, "direct", agent); }
+          // Agent classified as task → escalate
+          if (/^\[TASK\]/m.test(contentOnly || fullText)) {
+            const cleanReply = finalReply.replace(/^\[TASK\]\s*/i, "").trim();
+            broadcast("chat_stream", { phase: "end", message_id: msgId, agent_id: agent.id, content: cleanReply, created_at: nowMs() });
+            if (cleanReply) sendAgentMessage(agent, cleanReply);
+            registerMessengerRouteIfNeeded(ceoMessage, options);
+            if (agent.role === "team_leader" && agent.department_id) { handleTaskDelegation(agent, ceoMessage, "", options); }
+            else { createDirectAgentTaskAndRun(agent, ceoMessage, options); }
+            return;
+          }
           const endedAt = nowMs();
           db.prepare(`INSERT INTO messages (id, sender_type, sender_id, receiver_type, receiver_id, content, message_type, task_id, created_at) VALUES (?, 'agent', ?, 'agent', NULL, ?, 'chat', NULL, ?)`)
             .run(msgId, agent.id, finalReply, endedAt);
@@ -218,7 +261,28 @@ export function initializeDirectChat(deps: {
         }
 
         const run = await runAgentOneShot(agent, built.prompt, { projectPath, rawOutput: true });
+        if (!run.text?.trim()) {
+          console.warn(`[scheduleAgentReply] Empty one-shot response from ${agent.name} (${agent.cli_provider})${run.error ? `: ${run.error}` : ""}`);
+        }
         const reply = chooseSafeReply(run, built.lang, "direct", agent);
+
+        // Agent decided this is a task → escalate to task flow
+        // Check both raw one-shot output and normalized reply for [TASK] marker
+        const rawReply = (run.text || "").trim();
+        const hasTaskMarker = /\[TASK\]/i.test(rawReply) || /\[TASK\]/i.test(reply);
+        if (hasTaskMarker) {
+          const cleanedReply = reply.replace(/^\[TASK\]\s*/i, "").trim();
+          if (cleanedReply) sendAgentMessage(agent, cleanedReply);
+          console.log(`[scheduleAgentReply] Agent ${agent.name} classified as TASK, escalating: "${ceoMessage.slice(0, 50)}"`);
+          registerMessengerRouteIfNeeded(ceoMessage, options);
+          if (agent.role === "team_leader" && agent.department_id) {
+            handleTaskDelegation(agent, ceoMessage, "", options);
+          } else {
+            createDirectAgentTaskAndRun(agent, ceoMessage, options);
+          }
+          return;
+        }
+
         sendAgentMessage(agent, reply);
       })();
     }, delay);

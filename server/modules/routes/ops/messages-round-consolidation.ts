@@ -1,5 +1,7 @@
 // @ts-nocheck
 
+import { REVIEW_MEETING_ONESHOT_TIMEOUT_MS } from "../../../db/runtime.ts";
+
 export function buildReviewRoundConsolidation(ctx: {
   db: any;
   nowMs: () => number;
@@ -82,7 +84,7 @@ export function buildReviewRoundConsolidation(ctx: {
             "", "Round option sources:", sourceBlock,
           ].join("\n");
           try {
-            const run = await runAgentOneShot(planningLeader, prompt, { projectPath: input.projectPath || process.cwd(), timeoutMs: 45_000 });
+            const run = await runAgentOneShot(planningLeader, prompt, { projectPath: input.projectPath || process.cwd(), timeoutMs: REVIEW_MEETING_ONESHOT_TIMEOUT_MS, noTools: true });
             const preferred = String(chooseSafeReply(run, input.lang, "summary", planningLeader) || "").trim();
             const raw = String(run?.text || "").trim();
             const merged = preferred || raw;

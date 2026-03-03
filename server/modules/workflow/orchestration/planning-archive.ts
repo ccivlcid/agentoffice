@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { randomUUID } from "node:crypto";
+import { REVIEW_MEETING_ONESHOT_TIMEOUT_MS } from "../../../db/runtime.ts";
 import { cleanArchiveText, clipArchiveText, buildFallbackPlanningArchive } from "./archive.ts";
 
 // ---------------------------------------------------------------------------
@@ -177,7 +178,8 @@ export function createPlanningArchiveHelpers(ctx: {
       try {
         const run = await runAgentOneShot(planningLeader, consolidationPrompt, {
           projectPath,
-          timeoutMs: 45_000,
+          timeoutMs: REVIEW_MEETING_ONESHOT_TIMEOUT_MS,
+          noTools: true,
         });
         summaryMarkdown = cleanArchiveText(normalizeConversationReply(run.text || "", 12_000, { maxSentences: 0 }).trim());
       } catch {

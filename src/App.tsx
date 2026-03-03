@@ -15,6 +15,7 @@ import { useWebSocket } from "./hooks/useWebSocket";
 import { useAppWebSocket } from "./hooks/useAppWebSocket";
 import { useAppHandlers } from "./hooks/useAppHandlers";
 import { useFetchAll } from "./hooks/useFetchAll";
+import { useAppBootstrapData } from "./hooks/useAppBootstrapData";
 import { computeAppLabels, computeUpdateBannerState } from "./hooks/useAppLabels";
 import type {
   Department,
@@ -52,6 +53,7 @@ export type { CrossDeptDelivery, CeoOfficeCall, OAuthCallbackResult };
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState<View>("office");
+  const [currentPackKey, setCurrentPackKey] = useState("development");
   const [departments, setDepartments] = useState<Department[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -88,7 +90,6 @@ export default function App() {
   const [mobileHeaderMenuOpen, setMobileHeaderMenuOpen] = useState(false);
   const [runtimeOs] = useState<RuntimeOs>(() => detectRuntimeOs());
   const [forceUpdateBanner] = useState<boolean>(() => isForceUpdateBannerEnabled());
-  const [updateStatus, setUpdateStatus] = useState<api.UpdateStatus | null>(null);
   const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<string>(() =>
     typeof window !== "undefined" ? (window.localStorage.getItem(UPDATE_BANNER_DISMISS_STORAGE_KEY) ?? "") : "",
   );
@@ -194,28 +195,8 @@ export default function App() {
       setView(viewFromUrl);
     }
   }, []);
-  // 세션(API 토큰) 부트스트랩 후 초기 데이터 로드 — 401 연쇄 방지
-  useEffect(() => {
-    api.bootstrapSession().finally(() => {
-      fetchAll();
-    });
-  }, [fetchAll]);
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () =>
-      api
-        .getUpdateStatus()
-        .then((s) => {
-          if (!cancelled) setUpdateStatus(s);
-        })
-        .catch(() => {});
-    refresh();
-    const t = setInterval(refresh, 30 * 60 * 1000);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
-  }, []);
+  // Session bootstrap + update status polling (extracted to hook)
+  const { updateStatus, setUpdateStatus } = useAppBootstrapData(fetchAll);
   useEffect(() => {
     if (view === "settings" && !cliStatus) api.getCliStatus(true).then(setCliStatus).catch(console.error);
   }, [view, cliStatus]);
@@ -428,6 +409,18 @@ export default function App() {
                 }}
                 onConveneTeamLeaderMeeting={openTeamLeaderMeetingChat}
                 onOpenAgentManager={() => setShowAgentManager(true)}
+                currentPackKey={currentPackKey}
+                onSelectPack={async (key) => {
+                  setCurrentPackKey(key);
+                  try {
+                    const [d, a] = await Promise.all([
+                      api.getDepartments(key !== "development" ? key : undefined),
+                      api.getAgents(key !== "development" ? key : undefined),
+                    ]);
+                    setDepartments(d);
+                    setAgents(a);
+                  } catch { /* ignore */ }
+                }}
                 onMoveAgent={async (agentId, targetDeptId) => {
                   await api.updateAgent(agentId, { department_id: targetDeptId });
                 }}

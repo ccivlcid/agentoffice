@@ -27,6 +27,7 @@ export {
   stopTask,
   pauseTask,
   resumeTask,
+  injectTaskPrompt,
   getTerminal,
   getTaskMeetingMinutes,
   getTaskDiff,
@@ -199,12 +200,15 @@ export {
   getTaskReports,
   getTaskReportDetail,
   archiveTaskReport,
+  getTaskDeliverables,
+  getDeliverableOpenUrl,
   getCliUsage,
   refreshCliUsage,
   type TaskReportSummary,
   type TaskReportDocument,
   type TaskReportTeamSection,
   type TaskReportDetail,
+  type DeliverableFile,
   type CliUsageWindow,
   type CliUsageEntry,
 } from './task-reports';
@@ -246,3 +250,10 @@ export {
   type GitHubStatus,
   type CloneStatus,
 } from './github';
+
+export {
+  getWorkflowPacks,
+  hydratePack,
+  togglePack,
+  type WorkflowPackInfo,
+} from './workflow-packs';

@@ -56,6 +56,8 @@ export default function AgentDetail({
   const [tab, setTab] = useState<"info" | "tasks" | "alba">("info");
   const [editingCli, setEditingCli] = useState(false);
   const [selectedCli, setSelectedCli] = useState(agent.cli_provider);
+  const [selectedCliModel, setSelectedCliModel] = useState(agent.cli_model ?? "");
+  const [selectedCliReasoningLevel, setSelectedCliReasoningLevel] = useState(agent.cli_reasoning_level ?? "");
   const [selectedOAuthAccountId, setSelectedOAuthAccountId] = useState(agent.oauth_account_id ?? "");
   const [selectedApiProviderId, setSelectedApiProviderId] = useState(agent.api_provider_id ?? "");
   const [selectedApiModel, setSelectedApiModel] = useState(agent.api_model ?? "");
@@ -95,10 +97,12 @@ export default function AgentDetail({
 
   useEffect(() => {
     setSelectedCli(agent.cli_provider);
+    setSelectedCliModel(agent.cli_model ?? "");
+    setSelectedCliReasoningLevel(agent.cli_reasoning_level ?? "");
     setSelectedOAuthAccountId(agent.oauth_account_id ?? "");
     setSelectedApiProviderId(agent.api_provider_id ?? "");
     setSelectedApiModel(agent.api_model ?? "");
-  }, [agent.id, agent.cli_provider, agent.oauth_account_id, agent.api_provider_id, agent.api_model]);
+  }, [agent.id, agent.cli_provider, agent.cli_model, agent.cli_reasoning_level, agent.oauth_account_id, agent.api_provider_id, agent.api_model]);
 
   useEffect(() => {
     if (!editingCli || !requiresOAuthAccount) return;
@@ -125,6 +129,8 @@ export default function AgentDetail({
     try {
       await api.updateAgent(agent.id, {
         cli_provider: selectedCli,
+        cli_model: selectedCliModel || null,
+        cli_reasoning_level: selectedCliReasoningLevel || null,
         oauth_account_id: requiresOAuthAccount ? (selectedOAuthAccountId || null) : null,
         api_provider_id: requiresApiProvider ? (selectedApiProviderId || null) : null,
         api_model: requiresApiProvider ? (selectedApiModel || null) : null,
@@ -141,6 +147,8 @@ export default function AgentDetail({
   const handleCliCancel = () => {
     setEditingCli(false);
     setSelectedCli(agent.cli_provider);
+    setSelectedCliModel(agent.cli_model ?? "");
+    setSelectedCliReasoningLevel(agent.cli_reasoning_level ?? "");
     setSelectedOAuthAccountId(agent.oauth_account_id ?? "");
     setSelectedApiProviderId(agent.api_provider_id ?? "");
     setSelectedApiModel(agent.api_model ?? "");
@@ -200,6 +208,8 @@ export default function AgentDetail({
                   agent={agent}
                   editingCli={editingCli}
                   selectedCli={selectedCli}
+                  selectedCliModel={selectedCliModel}
+                  selectedCliReasoningLevel={selectedCliReasoningLevel}
                   selectedOAuthAccountId={selectedOAuthAccountId}
                   requiresOAuthAccount={requiresOAuthAccount}
                   requiresApiProvider={requiresApiProvider}
@@ -208,7 +218,9 @@ export default function AgentDetail({
                   oauthLoading={oauthLoading}
                   activeOAuthAccounts={activeOAuthAccounts}
                   t={t}
-                  onCliChange={setSelectedCli}
+                  onCliChange={(cli) => { setSelectedCli(cli); setSelectedCliModel(""); setSelectedCliReasoningLevel(""); }}
+                  onCliModelChange={setSelectedCliModel}
+                  onCliReasoningLevelChange={setSelectedCliReasoningLevel}
                   onOAuthAccountChange={setSelectedOAuthAccountId}
                   onSave={() => void handleCliSave()}
                   onCancel={handleCliCancel}

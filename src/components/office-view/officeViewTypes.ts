@@ -57,6 +57,10 @@ export interface OfficeViewProps {
   onOpenAgentManager?: () => void;
   /** 드래그 앤 드롭으로 에이전트 부서 이동 시 호출 (null = 휴게실) */
   onMoveAgent?: (agentId: string, targetDeptId: string | null) => void;
+  /** Current workflow pack key */
+  currentPackKey?: string;
+  /** Pack change handler */
+  onSelectPack?: (key: string) => void;
 }
 
 export interface Delivery {

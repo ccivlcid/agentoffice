@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { REVIEW_MAX_ROUNDS } from "../../../db/runtime.ts";
+import { REVIEW_MAX_ROUNDS, REVIEW_MEETING_ONESHOT_TIMEOUT_MS } from "../../../db/runtime.ts";
 import type { MeetingTranscriptEntry } from "./meetings-memo.ts";
 import { runReviewVotePhase } from "./meetings-rounds-vote.ts";
 
@@ -68,7 +68,7 @@ export function makeRoundsHelpers(ctx: any) {
         const projectPath = resolveProjectPath({ title: taskTitle, description: taskDescription, project_path: taskCtx?.project_path ?? null });
         const lang = resolveLang(taskDescription ?? taskTitle);
         const transcript: MeetingTranscriptEntry[] = [];
-        const oneShotOptions = { projectPath, timeoutMs: 35_000 };
+        const oneShotOptions = { projectPath, timeoutMs: REVIEW_MEETING_ONESHOT_TIMEOUT_MS, noTools: true };
         meetingId = resumeMeeting ? (latestMeeting?.id ?? null) : beginMeetingMinutes(taskId, "review", round, taskTitle);
         let minuteSeq = 1;
         if (meetingId) {

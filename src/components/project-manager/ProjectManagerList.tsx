@@ -36,7 +36,7 @@ export default function ProjectManagerList({
   const { t } = useI18n();
 
   return (
-    <aside className="flex w-[330px] flex-col border-r border-slate-700 bg-slate-900/70">
+    <aside className="flex w-full md:w-[330px] flex-col border-r border-slate-700 bg-slate-900/70">
       <div className="flex items-center justify-between border-b border-slate-700 px-4 py-3">
         <h2 className="text-sm font-semibold text-white">
           {t({ ko: '프로젝트 관리', en: 'Project Management' })}

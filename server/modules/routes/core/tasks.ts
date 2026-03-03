@@ -20,6 +20,7 @@ import { registerTaskGitInfo } from "./tasks-git-info.ts";
 import { registerTaskStop } from "./tasks-stop.ts";
 import { registerTaskTimeline } from "./tasks-timeline.ts";
 import { registerTaskClone } from "./tasks-clone.ts";
+import { registerTaskInject } from "./tasks-inject.ts";
 
 export function registerCoreTasks(ctx: RuntimeContext): void {
   registerTaskQueries(ctx);
@@ -30,4 +31,5 @@ export function registerCoreTasks(ctx: RuntimeContext): void {
   registerTaskStop(ctx);
   registerTaskTimeline(ctx);
   registerTaskClone(ctx);
+  registerTaskInject(ctx);
 }

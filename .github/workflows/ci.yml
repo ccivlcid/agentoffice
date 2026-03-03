@@ -1,7 +1,13 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -13,10 +19,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Unicode guard (Trojan Source)
+        run: |
+          if grep -rP '[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]' .github/workflows/; then
+            echo "::error::Hidden Unicode characters detected in workflow files"
+            exit 1
+          fi
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: "9.15.4"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -26,6 +39,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm exec tsc -p tsconfig.json --noEmit
+
+      - name: Build
+        run: pnpm run build
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps

@@ -40,7 +40,12 @@ export function withCliPathFallback(pathValue: string | undefined): string {
   return parts.join(path.delimiter);
 }
 
-export function buildAgentArgs(provider: string, model?: string, reasoningLevel?: string): string[] {
+export function buildAgentArgs(
+  provider: string,
+  model?: string,
+  reasoningLevel?: string,
+  opts?: { noTools?: boolean },
+): string[] {
   switch (provider) {
     case "codex": {
       const args = ["codex", "--enable", "multi_agent"];
@@ -59,6 +64,7 @@ export function buildAgentArgs(provider: string, model?: string, reasoningLevel?
         "--include-partial-messages",
         "--max-turns", "200",
       ];
+      if (opts?.noTools) args.push("--tools", "");
       if (model) args.push("--model", model);
       return args;
     }

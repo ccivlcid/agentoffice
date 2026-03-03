@@ -1,6 +1,8 @@
 // @ts-nocheck
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { sendToChannel } from "../../../gateway/send.ts";
+import { decryptSecret } from "../../../oauth/helpers.ts";
 
 export function createProgressTimerHelpers(ctx: {
   db: any;
@@ -70,6 +72,35 @@ export function createProgressTimerHelpers(ctx: {
       task_id: taskId,
       created_at: t,
     });
+
+    // Relay to messenger if task has a messenger route
+    if (taskId) {
+      try {
+        let route = db.prepare("SELECT * FROM messenger_routes WHERE task_id = ? LIMIT 1").get(taskId) as any;
+
+        // Fallback: match by content_hash if task_id not yet linked
+        if (!route) {
+          const task = db.prepare("SELECT title FROM tasks WHERE id = ?").get(taskId) as any;
+          if (task?.title) {
+            const hash = createHash("sha256").update(task.title).digest("hex").slice(0, 32);
+            route = db.prepare("SELECT * FROM messenger_routes WHERE content_hash = ? ORDER BY created_at DESC LIMIT 1").get(hash) as any;
+            if (route) {
+              try { db.prepare("UPDATE messenger_routes SET task_id = ? WHERE id = ?").run(taskId, route.id); } catch { /* ignore */ }
+            }
+          }
+        }
+
+        if (route?.session_key) {
+          const session = db.prepare("SELECT * FROM messenger_sessions WHERE session_key = ? AND active = 1").get(route.session_key) as any;
+          if (session?.token_enc) {
+            const token = decryptSecret(session.token_enc).trim();
+            const target = route.author || session.target;
+            const compact = content.length > 500 ? content.slice(0, 497) + "..." : content;
+            sendToChannel(session.channel, target, compact, token).catch(() => {});
+          }
+        }
+      } catch { /* best-effort */ }
+    }
   }
 
   return { startProgressTimer, stopProgressTimer, notifyCeo };

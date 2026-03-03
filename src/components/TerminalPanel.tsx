@@ -25,6 +25,10 @@ export default function TerminalPanel({ taskId, task, agent, agents, initialTab 
   const [logPath, setLogPath] = useState('');
   const [follow, setFollow] = useState(true);
   const [activeTab, setActiveTab] = useState<'terminal' | 'minutes'>(initialTab);
+  const [controlToken, setControlToken] = useState<string | null>(null);
+  const [injectPrompt, setInjectPrompt] = useState('');
+  const [injectBusy, setInjectBusy] = useState(false);
+  const [injectError, setInjectError] = useState<string | null>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -59,6 +63,7 @@ export default function TerminalPanel({ taskId, task, agent, agents, initialTab 
           });
         }
         setProgressHints(res.progress_hints ?? null);
+        setControlToken((res as any).interrupt?.control_token ?? null);
         if (res.exists) {
           const nextText = res.text ?? '';
           setText((prev) => (prev === nextText ? prev : nextText));
@@ -218,6 +223,67 @@ export default function TerminalPanel({ taskId, task, agent, agents, initialTab 
 
       {activeTab === 'terminal' && shouldShowProgressHints && progressHints && (
         <TerminalProgressStrip progressHints={progressHints} activeToolHint={activeToolHint} />
+      )}
+
+      {/* Inject panel (visible when task is paused with control token) */}
+      {task?.status === 'pending' && controlToken && (
+        <div className="border-t px-4 py-3 space-y-2" style={{ borderColor: 'var(--th-border)', background: 'var(--th-bg-surface)' }}>
+          <textarea
+            value={injectPrompt}
+            onChange={(e) => { setInjectPrompt(e.target.value); setInjectError(null); }}
+            maxLength={2000}
+            rows={2}
+            placeholder={tr('프롬프트를 입력하세요...', 'Enter prompt to inject...', 'プロンプトを入力してください...', '请输入要注入的提示...')}
+            className="w-full rounded-lg border px-3 py-2 text-xs font-mono resize-none focus:outline-none focus:ring-2"
+            style={{ borderColor: 'var(--th-border)', background: 'var(--th-bg-primary)', color: 'var(--th-text-primary)' }}
+            disabled={injectBusy}
+          />
+          {injectError && <div className="text-[10px] text-red-400">{injectError}</div>}
+          <div className="flex items-center gap-2">
+            <button
+              disabled={injectBusy || !injectPrompt.trim()}
+              onClick={async () => {
+                setInjectBusy(true);
+                setInjectError(null);
+                try {
+                  await api.injectTaskPrompt(taskId, injectPrompt.trim(), controlToken);
+                  await api.resumeTask(taskId);
+                  setInjectPrompt('');
+                  setControlToken(null);
+                } catch (e: any) {
+                  setInjectError(e?.message || 'Inject failed');
+                } finally {
+                  setInjectBusy(false);
+                }
+              }}
+              className="px-3 py-1.5 text-[11px] rounded-lg font-medium transition-colors bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+            >
+              {injectBusy ? '...' : tr('주입 후 재개', 'Inject & Resume', '注入して再開', '注入并恢复')}
+            </button>
+            <button
+              disabled={injectBusy}
+              onClick={async () => {
+                setInjectBusy(true);
+                try {
+                  await api.resumeTask(taskId);
+                  setControlToken(null);
+                  setInjectPrompt('');
+                } catch (e: any) {
+                  setInjectError(e?.message || 'Resume failed');
+                } finally {
+                  setInjectBusy(false);
+                }
+              }}
+              className="px-3 py-1.5 text-[11px] rounded-lg font-medium transition-colors disabled:opacity-50"
+              style={{ background: 'var(--th-bg-secondary)', color: 'var(--th-text-secondary)', border: '1px solid var(--th-border)' }}
+            >
+              {tr('바로 재개', 'Resume Only', 'そのまま再開', '直接恢复')}
+            </button>
+            <span className="text-[10px] ml-auto" style={{ color: 'var(--th-text-muted)' }}>
+              {injectPrompt.length}/2000
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Footer */}

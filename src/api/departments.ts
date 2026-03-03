@@ -1,8 +1,9 @@
 import type { Department, Agent } from '../types';
 import { request, post, patch, del } from './client';
 
-export async function getDepartments(): Promise<Department[]> {
-  const j = await request<{ departments: Department[] }>('/api/departments');
+export async function getDepartments(packKey?: string): Promise<Department[]> {
+  const qs = packKey ? `?pack_key=${encodeURIComponent(packKey)}` : '';
+  const j = await request<{ departments: Department[] }>(`/api/departments${qs}`);
   return j.departments;
 }
 

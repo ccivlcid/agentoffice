@@ -16,6 +16,12 @@ const EXECUTION_CONTINUITY_POLICY_LINES = [
   "- Continue from the latest state without self-introduction or kickoff narration / 자기소개·착수 멘트 없이 최신 상태에서 바로 이어서 작업",
   "- Reuse prior codebase understanding and read only files needed for this delta / 기존 코드베이스 이해를 재사용하고 이번 변경에 필요한 파일만 확인",
   "- Focus on unresolved checklist items and produce concrete diffs first / 미해결 체크리스트 중심으로 즉시 코드 변경부터 진행",
+  "",
+  "[Deliverables Output / 산출물 경로]",
+  "- Save all deliverables (PPT, PDF, HTML, images, reports) under the `output/` directory at the project root / 모든 산출물(PPT, PDF, HTML, 이미지, 보고서)은 프로젝트 루트의 output/ 디렉토리에 저장",
+  "- Use subdirectory per task: `output/<task-short-name>/` / 태스크별 하위 디렉토리 사용: output/<태스크-짧은-이름>/",
+  "- Planning/draft documents also go under the same output subdirectory, NOT under docs/ / 기획·초안 문서도 같은 output 하위 디렉토리에 저장 (docs/ 사용 금지)",
+  "- For PPT/slides: always generate the final .pptx file using pptxgenjs, not just HTML slides / PPT는 반드시 pptxgenjs로 최종 .pptx 파일 생성 (HTML 슬라이드만 만들지 말 것)",
 ];
 
 const WARNING_FIX_OVERRIDE_LINE = "- Exception override: User explicitly requested warning-level fixes for this task. You may fix the requested MEDIUM/LOW items / 예외: 이 작업에서 사용자 요청 시 MEDIUM/LOW도 해당 요청 범위 내에서 수정 가능";
